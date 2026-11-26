@@ -51,7 +51,7 @@ jobs:
         run: pytest tests/integration -q
 
   site:
-    # Builds the public static site's data exactly as Cloudflare Pages does, and checks the script parses.
+    # Builds the public static site's data exactly as the Cloudflare build does, and checks the script parses.
     runs-on: ubuntu-latest
     env:
       NAIRADB_CACHE: ${{ github.workspace }}/data/nairadb

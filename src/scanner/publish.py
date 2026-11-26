@@ -1,4 +1,4 @@
-"""Build the data files for the public static site (investment.bolujo.com).
+"""Build the data files for the public static site (invest.bolujo.com).
 
     python -m scanner.publish --out site/data
 
