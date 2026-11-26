@@ -1,5 +1,6 @@
 # Price data is never committed (see docs/SCOPE.md, section 7.3)
 /data/
+/site/data/
 /.cache/
 /exports/
 *.csv
