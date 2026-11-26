@@ -1,4 +1,5 @@
 """Scan orchestration: one ticker or many."""
+
 from __future__ import annotations
 
 import hashlib
@@ -20,8 +21,8 @@ from .windows import Window, last_complete_month, window_returns, windows_from_c
 @dataclass
 class ScanResult:
     ticker: str
-    stats: pd.DataFrame            # one row per window
-    yearly: pd.DataFrame           # one row per window-year
+    stats: pd.DataFrame  # one row per window
+    yearly: pd.DataFrame  # one row per window-year
     quality: QualityReport
     permutation: dict | None
     meta: dict = field(default_factory=dict)
@@ -84,8 +85,16 @@ def scan_ticker(
         mkt = benchmark.values(w) if market_ok else None
         own_w = {y: v for (L, y), v in own.items() if L == w.length} if w.length < 12 else None
         st = window_stats(yr, mkt, own_w)
-        st.update({"ticker": ticker, "window": w.name, "kind": w.kind, "start_month": w.start_month,
-                   "length": w.length, "is_quarter": w.is_quarter})
+        st.update(
+            {
+                "ticker": ticker,
+                "window": w.name,
+                "kind": w.kind,
+                "start_month": w.start_month,
+                "length": w.length,
+                "is_quarter": w.is_quarter,
+            }
+        )
         klass, note = cl.classify(st, c, market_available=market_ok)
         flags = []
         if st["n"] < c["min_years"]:
@@ -98,15 +107,22 @@ def scan_ticker(
         st["score"] = cl.score(st, c) if st["n"] else np.nan
         stat_rows.append(st)
         for row in yr.itertuples(index=False):
-            year_rows.append({
-                "ticker": ticker, "window": w.name, "year": int(row.year),
-                "entry_date": row.entry_date, "entry_price": row.entry_price,
-                "exit_date": row.exit_date, "exit_price": row.exit_price,
-                "return": row.ret, "dip": row.dip,
-                "market": mkt.get(int(row.year), np.nan) if mkt else np.nan,
-                "own_average": own_w.get(int(row.year), np.nan) if own_w else np.nan,
-                **provenance,
-            })
+            year_rows.append(
+                {
+                    "ticker": ticker,
+                    "window": w.name,
+                    "year": int(row.year),
+                    "entry_date": row.entry_date,
+                    "entry_price": row.entry_price,
+                    "exit_date": row.exit_date,
+                    "exit_price": row.exit_price,
+                    "return": row.ret,
+                    "dip": row.dip,
+                    "market": mkt.get(int(row.year), np.nan) if mkt else np.nan,
+                    "own_average": own_w.get(int(row.year), np.nan) if own_w else np.nan,
+                    **provenance,
+                }
+            )
 
     stats = cl.sort_stats(pd.DataFrame(stat_rows).assign(**provenance))
     yearly = pd.DataFrame(year_rows)
@@ -114,8 +130,14 @@ def scan_ticker(
     perm = None
     if run_permutation and cfg["significance"]["runs"] > 0:
         perm = permutation_test(
-            {ticker: series}, {ticker: last_complete}, sorted({w.length for w in windows}), c,
-            cfg["significance"]["runs"], cfg["significance"]["seed"], start_year, end_year,
+            {ticker: series},
+            {ticker: last_complete},
+            sorted({w.length for w in windows}),
+            c,
+            cfg["significance"]["runs"],
+            cfg["significance"]["seed"],
+            start_year,
+            end_year,
         )
 
     meta = {
@@ -148,9 +170,16 @@ def scan_many(
         if t not in universe:
             missing.append(t)
             continue
-        results[t] = scan_ticker(t, universe[t], benchmark, cfg, as_of, run_permutation=False,
-                                 import_gaps=(import_gaps or {}).get(t),
-                                 ex_dividend_dates=(ex_dividend_dates or {}).get(t))
+        results[t] = scan_ticker(
+            t,
+            universe[t],
+            benchmark,
+            cfg,
+            as_of,
+            run_permutation=False,
+            import_gaps=(import_gaps or {}).get(t),
+            ex_dividend_dates=(ex_dividend_dates or {}).get(t),
+        )
     combined = pd.concat([r.stats for r in results.values()], ignore_index=True) if results else pd.DataFrame()
     if not combined.empty:
         combined = cl.sort_stats(combined)
@@ -160,7 +189,11 @@ def scan_many(
         perm = permutation_test(
             {t: universe[t] for t in results},
             {t: last_complete_month(universe[t].index[-1]) for t in results},
-            lengths, cfg["classification"], cfg["significance"]["runs"], cfg["significance"]["seed"],
-            cfg["lookback"]["start_year"], cfg["lookback"]["end_year"],
+            lengths,
+            cfg["classification"],
+            cfg["significance"]["runs"],
+            cfg["significance"]["seed"],
+            cfg["lookback"]["start_year"],
+            cfg["lookback"]["end_year"],
         )
     return results, combined, perm, missing

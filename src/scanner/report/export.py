@@ -1,4 +1,5 @@
 """CSV and PDF export."""
+
 from __future__ import annotations
 
 import io
@@ -19,10 +20,42 @@ from .method import CAVEATS, CLASSES, METHOD
 from .tables import PCT, pattern_table
 
 STATS_EXPORT_COLUMNS = [
-    "ticker", "window", "kind", "class", "note", "flags", "n", "up", "hit_rate", "streak", "longest_streak",
-    "median", "mean", "worst", "best", "std", "variance", "beat_market", "market_n", "market_rate", "median_ex_market",
-    "beat_own", "own_n", "own_rate", "median_ex_own", "median_dip", "worst_dip", "p_up", "p_own",
-    "score", "first_year", "last_year", "years", "data_hash", "code_version", "settings_hash",
+    "ticker",
+    "window",
+    "kind",
+    "class",
+    "note",
+    "flags",
+    "n",
+    "up",
+    "hit_rate",
+    "streak",
+    "longest_streak",
+    "median",
+    "mean",
+    "worst",
+    "best",
+    "std",
+    "variance",
+    "beat_market",
+    "market_n",
+    "market_rate",
+    "median_ex_market",
+    "beat_own",
+    "own_n",
+    "own_rate",
+    "median_ex_own",
+    "median_dip",
+    "worst_dip",
+    "p_up",
+    "p_own",
+    "score",
+    "first_year",
+    "last_year",
+    "years",
+    "data_hash",
+    "code_version",
+    "settings_hash",
 ]
 
 
@@ -35,8 +68,9 @@ def yearly_csv(yearly: pd.DataFrame) -> bytes:
     return yearly.to_csv(index=False, float_format="%.6f").encode("utf-8")
 
 
-def run_manifest(results: list, permutation: dict | None, as_of: pd.Timestamp, sources: list[str],
-                 benchmark: str) -> bytes:
+def run_manifest(
+    results: list, permutation: dict | None, as_of: pd.Timestamp, sources: list[str], benchmark: str
+) -> bytes:
     """Run details as JSON: everything needed to reproduce the report (docs/SCOPE.md NF-2, NF-3)."""
     cfg = results[0].meta["config"] if results else {}
     doc = {
@@ -91,19 +125,32 @@ def _table(data: list[list[str]], styles, col_widths=None) -> Table:
     body = styles["BodyText"].clone("cell", fontSize=7, leading=8.5)
     wrapped = [[Paragraph(c, body) for c in r] for r in data]
     t = Table(wrapped, colWidths=col_widths, repeatRows=1)
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#efefef")),
-        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#cccccc")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#efefef")),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#cccccc")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
     return t
 
 
-def pdf_report(results: list, permutation: dict | None, as_of: pd.Timestamp, title: str, meta_lines: list[str]) -> bytes:
+def pdf_report(
+    results: list, permutation: dict | None, as_of: pd.Timestamp, title: str, meta_lines: list[str]
+) -> bytes:
     """results: list of ScanResult. Returns PDF bytes."""
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), leftMargin=12 * mm, rightMargin=12 * mm,
-                            topMargin=12 * mm, bottomMargin=12 * mm, title=title)
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=landscape(A4),
+        leftMargin=12 * mm,
+        rightMargin=12 * mm,
+        topMargin=12 * mm,
+        bottomMargin=12 * mm,
+        title=title,
+    )
     st = getSampleStyleSheet()
     story = [Paragraph(title, st["Title"])]
     cfg = results[0].meta["config"] if results else {}
@@ -120,8 +167,11 @@ def pdf_report(results: list, permutation: dict | None, as_of: pd.Timestamp, tit
     stats = pd.concat([r.stats for r in results], ignore_index=True)
     multi = len(results) > 1
     for heading, classes in [
-        ("Tier 1 patterns", ["Tier 1"]), ("Tier 2 patterns", ["Tier 2"]), ("Watch", ["Watch"]),
-        ("Emerging", ["Emerging"]), ("Negative windows (exit or avoid)", ["Negative"]),
+        ("Tier 1 patterns", ["Tier 1"]),
+        ("Tier 2 patterns", ["Tier 2"]),
+        ("Watch", ["Watch"]),
+        ("Emerging", ["Emerging"]),
+        ("Negative windows (exit or avoid)", ["Negative"]),
     ]:
         tbl = pattern_table(stats, classes, include_ticker=True).drop(columns=["Class"])
         if not multi:

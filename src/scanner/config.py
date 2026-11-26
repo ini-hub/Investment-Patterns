@@ -1,4 +1,5 @@
 """Settings loading. Defaults live in default.yaml next to this file."""
+
 from __future__ import annotations
 
 import copy

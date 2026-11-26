@@ -1,10 +1,17 @@
 """Classification rules (docs/SCOPE.md 8.6)."""
+
 from __future__ import annotations
 
 import math
 
 TIER1, TIER2, WATCH, EMERGING, NEGATIVE, NONE, INSUFFICIENT = (
-    "Tier 1", "Tier 2", "Watch", "Emerging", "Negative", "None", "Insufficient history",
+    "Tier 1",
+    "Tier 2",
+    "Watch",
+    "Emerging",
+    "Negative",
+    "None",
+    "Insufficient history",
 )
 CLASS_ORDER = [TIER1, TIER2, WATCH, EMERGING, NEGATIVE, NONE, INSUFFICIENT]
 
@@ -18,7 +25,8 @@ def is_candidate(s: dict, c: dict) -> bool:
         s["length"] < 12
         and s["n"] >= c["min_years"]
         and s["hit_rate"] >= c["candidate_hit_rate"]
-        and _ok(s.get("own_rate")) and s["own_rate"] >= c["candidate_own_rate"]
+        and _ok(s.get("own_rate"))
+        and s["own_rate"] >= c["candidate_own_rate"]
         and s["median"] >= c["candidate_min_median"]
     )
 
@@ -28,7 +36,8 @@ def _is_emerging(s: dict, c: dict) -> bool:
     return (
         s["length"] < 12
         and s["streak"] >= c["emerging_min_streak"]
-        and _ok(s.get("median")) and s["median"] >= c["emerging_min_median"]
+        and _ok(s.get("median"))
+        and s["median"] >= c["emerging_min_median"]
     )
 
 
@@ -57,7 +66,8 @@ def classify(s: dict, c: dict, market_available: bool = True) -> tuple[str, str]
         s["length"] < 12
         and s["hit_rate"] >= c["watch_hit_rate"]
         and s["median"] >= c["watch_min_median"]
-        and _ok(s.get("own_rate")) and s["own_rate"] >= c["watch_own_rate"]
+        and _ok(s.get("own_rate"))
+        and s["own_rate"] >= c["watch_own_rate"]
         and s["streak"] >= c["watch_min_streak"]
     ):
         return WATCH, ""
@@ -75,7 +85,6 @@ def score(s: dict, c: dict) -> float:
 
 def sort_stats(df):
     """Order rows: class order, then score (best first); Negative rows by hit rate then median (worst first)."""
-    import pandas as pd
 
     order = {k: i for i, k in enumerate(CLASS_ORDER)}
     df = df.copy()

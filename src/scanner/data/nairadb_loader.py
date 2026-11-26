@@ -7,6 +7,7 @@ pinned to a fixed commit so results are reproducible.
 Contents: daily, unadjusted closing prices for about 147 NGX stocks,
 late December 2015 to 19 December 2025.
 """
+
 from __future__ import annotations
 
 import json

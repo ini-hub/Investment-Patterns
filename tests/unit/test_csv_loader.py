@@ -12,12 +12,15 @@ def as_file(text: str, name: str):
     return f
 
 
-@pytest.mark.parametrize("name, ticker", [
-    ("NSENG_FCMB, 1D.csv", "FCMB"),
-    ("fcmb.csv", "FCMB"),
-    ("NSENG:VITAFOAM.csv", "VITAFOAM"),
-    ("data/learnafrca.csv", "LEARNAFRCA"),
-])
+@pytest.mark.parametrize(
+    "name, ticker",
+    [
+        ("NSENG_FCMB, 1D.csv", "FCMB"),
+        ("fcmb.csv", "FCMB"),
+        ("NSENG:VITAFOAM.csv", "VITAFOAM"),
+        ("data/learnafrca.csv", "LEARNAFRCA"),
+    ],
+)
 def test_ticker_from_filename(name, ticker):
     assert ticker_from_filename(name) == ticker
 

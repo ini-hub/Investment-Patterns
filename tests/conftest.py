@@ -63,8 +63,21 @@ def market(universe):
     return MarketBenchmark(universe)
 
 
-RESEARCH_TICKERS = ["VITAFOAM", "FCMB", "LEARNAFRCA", "ETI", "ETERNA", "PZ", "IKEJAHOTEL", "CONOIL",
-                    "HONYFLOUR", "FTNCOCOA", "BUACEMENT", "BUAFOODS", "CWG"]
+RESEARCH_TICKERS = [
+    "VITAFOAM",
+    "FCMB",
+    "LEARNAFRCA",
+    "ETI",
+    "ETERNA",
+    "PZ",
+    "IKEJAHOTEL",
+    "CONOIL",
+    "HONYFLOUR",
+    "FTNCOCOA",
+    "BUACEMENT",
+    "BUAFOODS",
+    "CWG",
+]
 
 
 @pytest.fixture(scope="session")

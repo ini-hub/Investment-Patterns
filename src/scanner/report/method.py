@@ -1,4 +1,5 @@
 """Plain-language method and caveats, included in every report (docs/SCOPE.md 8.8)."""
+
 from __future__ import annotations
 
 METHOD = [

@@ -1,4 +1,5 @@
 """Data-quality checks (docs/SCOPE.md 8.7)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -75,10 +76,12 @@ def check_quality(
     if gaps is None:
         gaps = []
         if len(series) > 1:
-            bd = np.busday_count(series.index[:-1].values.astype("datetime64[D]"),
-                                 series.index[1:].values.astype("datetime64[D]"))
-            gaps = [(series.index[i], series.index[i + 1], int(bd[i]))
-                    for i in np.where(bd > q["gap_business_days"])[0]]
+            bd = np.busday_count(
+                series.index[:-1].values.astype("datetime64[D]"), series.index[1:].values.astype("datetime64[D]")
+            )
+            gaps = [
+                (series.index[i], series.index[i + 1], int(bd[i])) for i in np.where(bd > q["gap_business_days"])[0]
+            ]
 
     stale, stale_days = False, 0
     if as_of is not None:

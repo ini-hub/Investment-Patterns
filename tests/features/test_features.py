@@ -1,4 +1,5 @@
 """Step definitions for the Gherkin acceptance specifications (docs/SCOPE.md 11.3)."""
+
 import io
 
 import pandas as pd

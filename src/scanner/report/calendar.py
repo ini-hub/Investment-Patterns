@@ -1,4 +1,5 @@
 """Seasonal calendar: when each qualifying window next opens and closes."""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -28,23 +29,27 @@ def next_dates(start_month: int, length: int, as_of: pd.Timestamp) -> tuple[pd.T
     raise RuntimeError("unreachable")
 
 
-def calendar_table(stats: pd.DataFrame, as_of: pd.Timestamp, classes=("Tier 1", "Tier 2", "Watch", "Negative")) -> pd.DataFrame:
+def calendar_table(
+    stats: pd.DataFrame, as_of: pd.Timestamp, classes=("Tier 1", "Tier 2", "Watch", "Negative")
+) -> pd.DataFrame:
     rows = []
     for _, s in stats[stats["class"].isin(classes)].iterrows():
         if s["length"] >= 12:
             continue
         entry, exit_, status = next_dates(int(s["start_month"]), int(s["length"]), as_of)
-        rows.append({
-            "Stock": s["ticker"],
-            "Window": s["window"],
-            "Class": s["class"],
-            "Status": status,
-            "Entry (close of)": entry.date(),
-            "Exit (close of)": exit_.date(),
-            "Days to entry": max((entry - pd.Timestamp(as_of).normalize()).days, 0),
-            "Median": s["median"],
-            "Years up": f"{int(s['up'])} / {int(s['n'])}",
-        })
+        rows.append(
+            {
+                "Stock": s["ticker"],
+                "Window": s["window"],
+                "Class": s["class"],
+                "Status": status,
+                "Entry (close of)": entry.date(),
+                "Exit (close of)": exit_.date(),
+                "Days to entry": max((entry - pd.Timestamp(as_of).normalize()).days, 0),
+                "Median": s["median"],
+                "Years up": f"{int(s['up'])} / {int(s['n'])}",
+            }
+        )
     df = pd.DataFrame(rows)
     if not df.empty:
         df = df.sort_values(["Status", "Days to entry"], ascending=[True, True]).reset_index(drop=True)

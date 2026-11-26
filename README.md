@@ -78,7 +78,7 @@ from scanner.config import load_config
 from scanner.data import load_universe
 from scanner.engine import MarketBenchmark, scan_ticker
 
-universe = load_universe()                  # downloads the pinned snapshot on first use
+universe = load_universe()  # downloads the pinned snapshot on first use
 benchmark = MarketBenchmark(universe)
 result = scan_ticker("FCMB", universe["FCMB"], benchmark, load_config())
 
@@ -94,6 +94,7 @@ pytest                       # everything
 pytest tests/unit            # fast, no data needed
 pytest tests/regression      # checks results against the research baseline (downloads the dataset)
 pytest tests/features        # Gherkin acceptance scenarios
+ruff check . && ruff format --check .   # lint, as CI runs it
 ```
 
 - The regression suite holds the research results from 26 November 2026 (Appendix A of the scope) and six prices verified against published sources. If a code change moves any of those numbers, the build fails.

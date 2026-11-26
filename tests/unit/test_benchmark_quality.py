@@ -40,7 +40,7 @@ def test_index_benchmark():
 
 
 def test_own_average_is_mean_of_twelve_windows():
-    vals = {f"2020-{m:02d}": 10 * (1.01 ** m) for m in range(1, 13)}
+    vals = {f"2020-{m:02d}": 10 * (1.01**m) for m in range(1, 13)}
     vals["2019-12"] = 10.0
     vals.update({f"2021-{m:02d}": vals["2020-12"] for m in range(1, 3)})
     s = make_monthly_series(dict(sorted(vals.items())))

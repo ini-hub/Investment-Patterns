@@ -2,6 +2,7 @@
 
 Run locally:  streamlit run app/streamlit_app.py
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -14,17 +15,40 @@ from scanner.config import load_config
 from scanner.data import CSVFormatError, DatasetUnavailable, load_csv, load_universe
 from scanner.data.nairadb_loader import PINNED_COMMIT
 from scanner.engine import (
-    CLASS_ORDER, IndexBenchmark, MarketBenchmark, describe_permutation, no_data_message, scan_many,
+    CLASS_ORDER,
+    IndexBenchmark,
+    MarketBenchmark,
+    describe_permutation,
+    no_data_message,
+    scan_many,
 )
 from scanner.report import (
-    calendar_table, heatmap_figure, method_markdown, month_strip, pattern_table, pdf_report,
-    run_manifest, stats_csv, year_detail, yearly_csv,
+    calendar_table,
+    heatmap_figure,
+    method_markdown,
+    month_strip,
+    pattern_table,
+    pdf_report,
+    run_manifest,
+    stats_csv,
+    year_detail,
+    yearly_csv,
 )
 
 st.set_page_config(page_title="Investment Patterns", layout="wide")
 
-PCT_COLS = {"Median", "Worst year", "Best year", "Std dev", "Median dip", "Worst dip", "Return", "Dip inside window",
-            "Market", "Own average"}
+PCT_COLS = {
+    "Median",
+    "Worst year",
+    "Best year",
+    "Std dev",
+    "Median dip",
+    "Worst dip",
+    "Return",
+    "Dip inside window",
+    "Market",
+    "Own average",
+}
 
 
 def show_df(df: pd.DataFrame) -> None:
@@ -74,16 +98,20 @@ with st.sidebar:
     uploads = []
     if source != "Open NGX dataset":
         uploads = st.file_uploader(
-            "Daily price CSV files (one per stock)", type=["csv"], accept_multiple_files=True,
+            "Daily price CSV files (one per stock)",
+            type=["csv"],
+            accept_multiple_files=True,
             help="Needs a date column (date, time or timestamp) and a close column (close, price or last). "
-                 "The ticker is read from the file name, e.g. 'NSENG_FCMB, 1D.csv' becomes FCMB.",
+            "The ticker is read from the file name, e.g. 'NSENG_FCMB, 1D.csv' becomes FCMB.",
         )
     index_file = st.file_uploader(
-        "Optional: index CSV for the benchmark (e.g. NGX All-Share Index)", type=["csv"],
+        "Optional: index CSV for the benchmark (e.g. NGX All-Share Index)",
+        type=["csv"],
         help="If given, this replaces the market average as the benchmark.",
     )
     exdiv_text = st.text_area(
-        "Optional: ex-dividend dates", placeholder="VITAFOAM, 2025-02-10\nLEARNAFRCA, 2025-09-15",
+        "Optional: ex-dividend dates",
+        placeholder="VITAFOAM, 2025-02-10\nLEARNAFRCA, 2025-09-15",
         help="One 'TICKER, YYYY-MM-DD' per line. Windows covering these months get a note.",
     )
     as_of = st.date_input("Calendar date", value=dt.date.today())
@@ -103,11 +131,14 @@ with st.sidebar:
         c = cfg["classification"]
         c["min_years"] = st.number_input("Minimum complete years", 3, 30, c["min_years"])
         c["candidate_hit_rate"] = st.slider("Hit rate (share of years up)", 0.5, 1.0, c["candidate_hit_rate"], 0.05)
-        c["candidate_own_rate"] = st.slider("Beat own average (share of years)", 0.5, 1.0, c["candidate_own_rate"], 0.05)
+        c["candidate_own_rate"] = st.slider(
+            "Beat own average (share of years)", 0.5, 1.0, c["candidate_own_rate"], 0.05
+        )
         c["candidate_min_median"] = st.slider("Minimum median return", 0.0, 0.3, c["candidate_min_median"], 0.01)
         c["tier1_min_streak"] = st.number_input("Tier 1 minimum current streak", 1, 20, c["tier1_min_streak"])
-        c["tier1_market_rate"] = st.slider("Tier 1 beat market (share of years)", 0.5, 1.0, c["tier1_market_rate"], 0.001,
-                                           format="%.3f")
+        c["tier1_market_rate"] = st.slider(
+            "Tier 1 beat market (share of years)", 0.5, 1.0, c["tier1_market_rate"], 0.001, format="%.3f"
+        )
     with st.expander("Watch, Negative and Emerging thresholds"):
         st.caption("Watch")
         c["watch_hit_rate"] = st.slider("Watch: hit rate", 0.5, 1.0, c["watch_hit_rate"], 0.05)
@@ -116,12 +147,18 @@ with st.sidebar:
         c["watch_min_streak"] = st.number_input("Watch: minimum current streak", 0, 20, c["watch_min_streak"])
         st.caption("Negative (exit or avoid)")
         c["negative_max_hit_rate"] = st.slider("Negative: maximum hit rate", 0.0, 0.5, c["negative_max_hit_rate"], 0.05)
-        c["negative_max_median"] = st.slider("Negative: maximum median return", -0.3, 0.0, c["negative_max_median"], 0.01)
+        c["negative_max_median"] = st.slider(
+            "Negative: maximum median return", -0.3, 0.0, c["negative_max_median"], 0.01
+        )
         st.caption("Emerging")
         c["emerging_min_streak"] = st.number_input("Emerging: minimum current streak", 1, 20, c["emerging_min_streak"])
-        c["emerging_min_median"] = st.slider("Emerging: minimum median return", 0.0, 0.3, c["emerging_min_median"], 0.01)
+        c["emerging_min_median"] = st.slider(
+            "Emerging: minimum median return", 0.0, 0.3, c["emerging_min_median"], 0.01
+        )
     with st.expander("Chance check"):
-        cfg["significance"]["runs"] = st.number_input("Shuffle runs (0 to skip)", 0, 5000, cfg["significance"]["runs"], 50)
+        cfg["significance"]["runs"] = st.number_input(
+            "Shuffle runs (0 to skip)", 0, 5000, cfg["significance"]["runs"], 50
+        )
         cfg["significance"]["seed"] = st.number_input("Random seed", 0, 10_000, cfg["significance"]["seed"])
 
 # ---------------------------------------------------------------- data assembly
@@ -172,11 +209,18 @@ for e in exdiv_errors:
 with st.expander("Data loaded", expanded=False):
     for n in notes:
         st.write(n)
-    st.write("Benchmark: " + (benchmark.description if benchmark is not None and benchmark.available
-                              else "not available, so no window can reach Tier 1"))
+    st.write(
+        "Benchmark: "
+        + (
+            benchmark.description
+            if benchmark is not None and benchmark.available
+            else "not available, so no window can reach Tier 1"
+        )
+    )
 
 tickers_text = st.text_input(
-    "Ticker symbol(s)", value="FCMB",
+    "Ticker symbol(s)",
+    value="FCMB",
     help="One ticker, or several separated by commas, e.g. FCMB, VITAFOAM, ETI",
 )
 run = st.button("Run scan", type="primary")
@@ -190,7 +234,13 @@ if run:
         st.stop()
     with st.spinner("Scanning..."):
         results, combined, perm, missing = scan_many(
-            tickers, universe, benchmark, cfg, pd.Timestamp(as_of), import_gaps, exdiv,
+            tickers,
+            universe,
+            benchmark,
+            cfg,
+            pd.Timestamp(as_of),
+            import_gaps,
+            exdiv,
         )
     st.session_state.last_run = (tickers, results, combined, perm, missing)
 
@@ -234,8 +284,10 @@ with tabs[0]:
         show_df(tbl)
 
 with tabs[1]:
-    st.caption("Windows that fell in most years. Useful for timing exits; retail short selling is not generally "
-               "available on the NGX.")
+    st.caption(
+        "Windows that fell in most years. Useful for timing exits; retail short selling is not generally "
+        "available on the NGX."
+    )
     show_df(pattern_table(combined, ["Negative"], include_ticker=multi).drop(columns=["Class"]))
 
 with tabs[2]:
@@ -245,8 +297,10 @@ with tabs[2]:
     st.caption("Colour saturates at +/-50%; the printed value is exact. Labels show the window's class.")
 
 with tabs[3]:
-    st.caption(f"Next or current occurrence of each qualifying window as of {as_of_ts.date()}. "
-               "Dates are the last business day of the month; NGX holidays are not modelled.")
+    st.caption(
+        f"Next or current occurrence of each qualifying window as of {as_of_ts.date()}. "
+        "Dates are the last business day of the month; NGX holidays are not modelled."
+    )
     show_df(calendar_table(combined, as_of_ts))
     strip = month_strip(combined)
     if not strip.empty:
@@ -259,9 +313,11 @@ with tabs[4]:
     wnames = r.stats["window"].tolist()
     wsel = st.selectbox("Window", wnames)
     srow = r.stats[r.stats["window"] == wsel].iloc[0]
-    st.write(f"**{pick} {wsel}**: {srow['class']}. Up in {srow['up']} of {srow['n']} years, "
-             f"median {srow['median']:+.1%}, mean {srow['mean']:+.1%}, worst {srow['worst']:+.1%}, "
-             f"best {srow['best']:+.1%}, standard deviation {srow['std']:.1%}.")
+    st.write(
+        f"**{pick} {wsel}**: {srow['class']}. Up in {srow['up']} of {srow['n']} years, "
+        f"median {srow['median']:+.1%}, mean {srow['mean']:+.1%}, worst {srow['worst']:+.1%}, "
+        f"best {srow['best']:+.1%}, standard deviation {srow['std']:.1%}."
+    )
     show_df(year_detail(r.yearly, wsel))
 
 with tabs[5]:
@@ -269,8 +325,11 @@ with tabs[5]:
 
 with tabs[6]:
     st.markdown(method_markdown(cfg))
-    st.caption(f"Code version {code_version()}. Settings hash {settings_hash(cfg)}. Data hash per stock: "
-               + ", ".join(f"{t} {r.meta['data_hash']}" for t, r in results.items()) + ".")
+    st.caption(
+        f"Code version {code_version()}. Settings hash {settings_hash(cfg)}. Data hash per stock: "
+        + ", ".join(f"{t} {r.meta['data_hash']}" for t, r in results.items())
+        + "."
+    )
 
 # ---------------------------------------------------------------- exports
 st.divider()
@@ -288,10 +347,14 @@ c1, c2, c3, c4 = st.columns(4)
 c1.download_button("Statistics (CSV)", stats_csv(combined), f"patterns_{name}_{stamp}.csv", "text/csv")
 c2.download_button("Year by year (CSV)", yearly_csv(yearly_all), f"yearly_{name}_{stamp}.csv", "text/csv")
 c3.download_button(
-    "Report (PDF)", pdf_report(list(results.values()), perm, as_of_ts, title, meta_lines),
-    f"report_{name}_{stamp}.pdf", "application/pdf",
+    "Report (PDF)",
+    pdf_report(list(results.values()), perm, as_of_ts, title, meta_lines),
+    f"report_{name}_{stamp}.pdf",
+    "application/pdf",
 )
 c4.download_button(
-    "Run details (JSON)", run_manifest(list(results.values()), perm, as_of_ts, notes, bench_text),
-    f"run_{name}_{stamp}.json", "application/json",
+    "Run details (JSON)",
+    run_manifest(list(results.values()), perm, as_of_ts, notes, bench_text),
+    f"run_{name}_{stamp}.json",
+    "application/json",
 )

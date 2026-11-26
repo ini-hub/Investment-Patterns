@@ -23,6 +23,7 @@ dev = [
     "pytest>=8.0",
     "pytest-bdd>=7.0",
     "hypothesis>=6.90",
+    "ruff==0.17.6",  # pinned: formatter output changes between releases
 ]
 
 [tool.setuptools.packages.find]
@@ -37,3 +38,11 @@ pythonpath = ["."]
 markers = [
     "regression: needs the NairaDB dataset snapshot (downloaded on first run)",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle, import order, bugbear, pyupgrade
+select = ["F", "E", "W", "I", "B", "UP"]

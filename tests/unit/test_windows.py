@@ -31,13 +31,16 @@ def test_periods_cross_year_end():
     assert Window(12, 2).months() == [12, 1]
 
 
-@pytest.mark.parametrize("last_date, expected", [
-    ("2025-12-19", "2025-11"),   # research dataset: December incomplete
-    ("2025-12-31", "2025-12"),
-    ("2025-10-31", "2025-10"),   # Friday, last business day
-    ("2025-11-28", "2025-11"),   # Friday 28 Nov is the last business day of Nov 2025
-    ("2025-11-27", "2025-10"),
-])
+@pytest.mark.parametrize(
+    "last_date, expected",
+    [
+        ("2025-12-19", "2025-11"),  # research dataset: December incomplete
+        ("2025-12-31", "2025-12"),
+        ("2025-10-31", "2025-10"),  # Friday, last business day
+        ("2025-11-28", "2025-11"),  # Friday 28 Nov is the last business day of Nov 2025
+        ("2025-11-27", "2025-10"),
+    ],
+)
 def test_last_complete_month(last_date, expected):
     assert str(last_complete_month(pd.Timestamp(last_date))) == expected
 
@@ -77,8 +80,8 @@ def test_missing_month_skips_year():
     vals = {f"2020-{m:02d}": 10 + m for m in range(1, 13)}
     del vals["2020-05"]
     s = make_monthly_series(vals)
-    assert 2020 not in window_returns(s, Window(5, 1))["year"].tolist()   # exit month missing
-    assert 2020 not in window_returns(s, Window(6, 1))["year"].tolist()   # entry month missing
+    assert 2020 not in window_returns(s, Window(5, 1))["year"].tolist()  # exit month missing
+    assert 2020 not in window_returns(s, Window(6, 1))["year"].tolist()  # entry month missing
     assert 2020 in window_returns(s, Window(7, 1))["year"].tolist()
 
 

@@ -1,4 +1,5 @@
 """Code version recorded in every report (docs/SCOPE.md NF-3)."""
+
 from __future__ import annotations
 
 import subprocess
@@ -10,7 +11,12 @@ __version__ = "0.1.0"
 
 def _git(*args: str) -> str:
     out = subprocess.run(
-        ["git", *args], cwd=Path(__file__).parent, capture_output=True, text=True, timeout=5, check=True,
+        ["git", *args],
+        cwd=Path(__file__).parent,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=True,
     )
     return out.stdout.strip()
 

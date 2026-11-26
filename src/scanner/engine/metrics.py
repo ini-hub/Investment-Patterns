@@ -1,4 +1,5 @@
 """Per-window statistics (docs/SCOPE.md 8.3)."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -57,23 +58,26 @@ def window_stats(yearly: pd.DataFrame, market: dict[int, float] | None, own: dic
 
     def _excess(ref: dict[int, float] | None, prefix: str) -> None:
         if not ref:
-            out.update({f"{prefix}_n": 0, f"beat_{prefix}": np.nan, f"{prefix}_rate": np.nan,
-                        f"median_ex_{prefix}": np.nan})
+            out.update(
+                {f"{prefix}_n": 0, f"beat_{prefix}": np.nan, f"{prefix}_rate": np.nan, f"median_ex_{prefix}": np.nan}
+            )
             return
-        ex = np.array([ri - ref[y] for y, ri in zip(years, r) if y in ref])
+        ex = np.array([ri - ref[y] for y, ri in zip(years, r, strict=True) if y in ref])
         m = len(ex)
         beat = int((ex > 0).sum())
-        out.update({
-            f"{prefix}_n": m,
-            f"beat_{prefix}": beat,
-            f"{prefix}_rate": beat / m if m else np.nan,
-            f"median_ex_{prefix}": float(np.median(ex)) if m else np.nan,
-        })
+        out.update(
+            {
+                f"{prefix}_n": m,
+                f"beat_{prefix}": beat,
+                f"{prefix}_rate": beat / m if m else np.nan,
+                f"median_ex_{prefix}": float(np.median(ex)) if m else np.nan,
+            }
+        )
         if prefix == "own":
             out["p_own"] = _p_greater(beat, m)
 
     _excess(market, "market")
     _excess(own, "own")
     out.setdefault("p_own", np.nan)
-    out["years"] = " ".join(f"{y}:{ri:+.1%}" for y, ri in zip(years, r))
+    out["years"] = " ".join(f"{y}:{ri:+.1%}" for y, ri in zip(years, r, strict=True))
     return out

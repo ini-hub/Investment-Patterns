@@ -1,4 +1,5 @@
 """Benchmarks (docs/SCOPE.md 8.4)."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -65,7 +66,7 @@ class IndexBenchmark:
     def values(self, window: Window) -> dict[int, float]:
         if window not in self._cache:
             df = window_returns(self.series, window, self.last_complete)
-            self._cache[window] = dict(zip(df["year"], df["ret"]))
+            self._cache[window] = dict(zip(df["year"], df["ret"], strict=True))
         return self._cache[window]
 
 
@@ -79,6 +80,6 @@ def own_average(series: pd.Series, windows: list[Window], last_complete: pd.Peri
     for length in lengths:
         for m in range(1, 13):
             df = window_returns(series, Window(m, length), last_complete)
-            for y, r in zip(df["year"], df["ret"]):
+            for y, r in zip(df["year"], df["ret"], strict=True):
                 acc.setdefault((length, int(y)), []).append(float(r))
     return {k: float(np.mean(v)) for k, v in acc.items()}

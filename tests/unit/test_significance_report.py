@@ -74,7 +74,7 @@ def test_seasonal_stock_end_to_end():
     res = scan_ticker("SEAS", seasonal_series(), None, load_config(overrides={"significance": {"runs": 20}}))
     nov_jan = res.stats[res.stats["window"] == "Nov-Jan"].iloc[0]
     assert nov_jan["up"] == nov_jan["n"] and nov_jan["n"] >= 10
-    assert nov_jan["class"] == "Tier 2"          # no market benchmark, so capped below Tier 1
+    assert nov_jan["class"] == "Tier 2"  # no market benchmark, so capped below Tier 1
     worst = res.stats[res.stats["window"] == "Jun"].iloc[0]
     assert worst["class"] == "Insufficient history" or worst["up"] == 0
 
@@ -92,7 +92,9 @@ def test_exports():
     header = csv.splitlines()[0].split(",")
     assert header[:4] == ["ticker", "window", "kind", "class"]
     assert header[-3:] == ["data_hash", "code_version", "settings_hash"]
-    assert {"data_hash", "code_version", "settings_hash"} <= set(yearly_csv(res.yearly).decode().splitlines()[0].split(","))
+    assert {"data_hash", "code_version", "settings_hash"} <= set(
+        yearly_csv(res.yearly).decode().splitlines()[0].split(",")
+    )
     pdf = pdf_report([res], res.permutation, pd.Timestamp("2026-11-26"), "Test", ["line"])
     assert pdf[:4] == b"%PDF"
     cal = calendar_table(res.stats, pd.Timestamp("2026-11-26"))
@@ -118,15 +120,22 @@ def test_settings_hash_changes_with_settings():
 
 def test_completeness_note():
     assert completeness_note(pd.Timestamp("2025-12-19"), pd.Period("2025-11", freq="M")).startswith(
-        "December 2025 is incomplete")
-    assert completeness_note(pd.Timestamp("2025-11-28"), pd.Period("2025-11", freq="M")) == \
-        "Last complete month: November 2025."
+        "December 2025 is incomplete"
+    )
+    assert (
+        completeness_note(pd.Timestamp("2025-11-28"), pd.Period("2025-11", freq="M"))
+        == "Last complete month: November 2025."
+    )
 
 
 def test_short_history_flagged_and_can_be_emerging():
     # Six years of data that rise every December: too short to classify, long enough to be Emerging.
-    res = scan_ticker("NEW", seasonal_series(years=range(2019, 2026), up_months=(12,), up=0.10, down=0.0),
-                      None, load_config(overrides={"significance": {"runs": 0}}))
+    res = scan_ticker(
+        "NEW",
+        seasonal_series(years=range(2019, 2026), up_months=(12,), up=0.10, down=0.0),
+        None,
+        load_config(overrides={"significance": {"runs": 0}}),
+    )
     assert res.stats["flags"].str.contains("Insufficient history").all()
     assert not res.stats["class"].isin(["Tier 1", "Tier 2", "Watch", "Negative"]).any()
     dec = res.stats[res.stats["window"] == "Dec"].iloc[0]

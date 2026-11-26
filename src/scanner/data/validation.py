@@ -1,4 +1,5 @@
 """Price-series validation shared by all loaders."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

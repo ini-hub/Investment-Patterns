@@ -2,6 +2,7 @@
 
 Any change to these numbers fails the build unless the fixtures are deliberately updated.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,7 @@ import pytest
 import yaml
 
 from scanner.config import load_config
-from scanner.engine import Window, permutation_test, window_returns
+from scanner.engine import permutation_test, window_returns
 from scanner.engine.windows import last_complete_month, standard_windows
 from tests.conftest import RESEARCH_TICKERS
 
@@ -26,8 +27,9 @@ def row(stats, ticker, window):
     return r.iloc[0]
 
 
-@pytest.mark.parametrize("rec", pd.read_csv(FIX / "verified_prices.csv").to_dict("records"),
-                         ids=lambda r: f"{r['ticker']}-{r['date']}")
+@pytest.mark.parametrize(
+    "rec", pd.read_csv(FIX / "verified_prices.csv").to_dict("records"), ids=lambda r: f"{r['ticker']}-{r['date']}"
+)
 def test_verified_prices(universe, rec):
     s = universe[rec["ticker"]]
     s = s[s.index <= pd.Timestamp(rec["date"])]
@@ -56,7 +58,7 @@ def test_market_seasonality(market, rec):
 def test_tier1_exact_list_and_order(research_scan):
     _, combined, _, _ = research_scan
     t1 = combined[combined["class"] == "Tier 1"]
-    assert list(zip(t1["ticker"], t1["window"])) == [(r["ticker"], r["window"]) for r in A["tier1"]]
+    assert list(zip(t1["ticker"], t1["window"], strict=True)) == [(r["ticker"], r["window"]) for r in A["tier1"]]
     for rec in A["tier1"]:
         r = row(t1, rec["ticker"], rec["window"])
         for key in ("up", "n", "streak", "beat_market"):
@@ -68,7 +70,7 @@ def test_tier1_exact_list_and_order(research_scan):
 def test_tier2_exact_set(research_scan):
     _, combined, _, _ = research_scan
     t2 = combined[combined["class"] == "Tier 2"]
-    assert set(zip(t2["ticker"], t2["window"])) == {(r["ticker"], r["window"]) for r in A["tier2"]}
+    assert set(zip(t2["ticker"], t2["window"], strict=True)) == {(r["ticker"], r["window"]) for r in A["tier2"]}
     for rec in A["tier2"]:
         r = row(t2, rec["ticker"], rec["window"])
         assert (r["up"], r["n"], r["streak"]) == (rec["up"], rec["n"], rec["streak"])
@@ -82,7 +84,9 @@ def test_watch_and_negative(research_scan):
     neg = combined[combined["class"] == "Negative"]
     assert len(neg) == A["negative_count"]
     top = neg.head(len(A["negative_top"]))
-    assert list(zip(top["ticker"], top["window"])) == [(r["ticker"], r["window"]) for r in A["negative_top"]]
+    assert list(zip(top["ticker"], top["window"], strict=True)) == [
+        (r["ticker"], r["window"]) for r in A["negative_top"]
+    ]
     for rec in A["negative_top"]:
         r = row(neg, rec["ticker"], rec["window"])
         assert (r["up"], r["n"]) == (rec["up"], rec["n"])
@@ -113,8 +117,14 @@ def test_quality_flags(research_scan):
 def test_permutation_actual_count(universe):
     cfg = load_config()
     uni = {t: universe[t] for t in RESEARCH_TICKERS}
-    res = permutation_test(uni, {t: last_complete_month(s.index[-1]) for t, s in uni.items()},
-                           [1, 2, 3], cfg["classification"], runs=40, seed=7)
+    res = permutation_test(
+        uni,
+        {t: last_complete_month(s.index[-1]) for t, s in uni.items()},
+        [1, 2, 3],
+        cfg["classification"],
+        runs=40,
+        seed=7,
+    )
     assert res["actual"] == A["permutation"]["actual"]
     assert 5 <= res["null_mean"] <= 14
 
@@ -124,8 +134,14 @@ def test_permutation_full_baseline(universe):
     p = A["permutation"]
     cfg = load_config()
     uni = {t: universe[t] for t in RESEARCH_TICKERS}
-    res = permutation_test(uni, {t: last_complete_month(s.index[-1]) for t, s in uni.items()},
-                           [1, 2, 3], cfg["classification"], runs=p["runs"], seed=p["seed"])
+    res = permutation_test(
+        uni,
+        {t: last_complete_month(s.index[-1]) for t, s in uni.items()},
+        [1, 2, 3],
+        cfg["classification"],
+        runs=p["runs"],
+        seed=p["seed"],
+    )
     got = {
         "actual": res["actual"],
         "null_mean": round(res["null_mean"], 2),

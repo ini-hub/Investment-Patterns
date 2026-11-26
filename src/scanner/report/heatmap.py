@@ -3,6 +3,7 @@
 Diverging scale (red for losses, neutral grey at 0%, blue for gains) so it reads
 for common colour-vision deficiencies; every cell also prints its value.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -23,20 +24,25 @@ def heatmap_figure(yearly: pd.DataFrame, stats: pd.DataFrame, title: str = "", c
     klass = stats.set_index("window")["class"].reindex(pivot.index)
     ylabels = [f"{w}  ({k})" if k not in ("None", "Insufficient history") else w for w, k in klass.items()]
 
-    fig = go.Figure(go.Heatmap(
-        z=np.clip(z, -cap, cap),
-        x=[str(c) for c in pivot.columns],
-        y=ylabels,
-        text=text,
-        texttemplate="%{text}",
-        textfont={"size": 10, "color": TEXT},
-        customdata=z,
-        hovertemplate="%{y}<br>%{x}: %{customdata:+.1%}<extra></extra>",
-        colorscale=[[0, NEG], [0.5, MID], [1, POS]],
-        zmin=-cap, zmax=cap, zmid=0,
-        xgap=2, ygap=2,
-        colorbar={"title": "Return", "tickformat": "+.0%"},
-    ))
+    fig = go.Figure(
+        go.Heatmap(
+            z=np.clip(z, -cap, cap),
+            x=[str(c) for c in pivot.columns],
+            y=ylabels,
+            text=text,
+            texttemplate="%{text}",
+            textfont={"size": 10, "color": TEXT},
+            customdata=z,
+            hovertemplate="%{y}<br>%{x}: %{customdata:+.1%}<extra></extra>",
+            colorscale=[[0, NEG], [0.5, MID], [1, POS]],
+            zmin=-cap,
+            zmax=cap,
+            zmid=0,
+            xgap=2,
+            ygap=2,
+            colorbar={"title": "Return", "tickformat": "+.0%"},
+        )
+    )
     fig.update_layout(
         title=title,
         height=max(420, 22 * len(ylabels) + 120),

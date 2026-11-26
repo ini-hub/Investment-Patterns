@@ -3,6 +3,7 @@
 Accepts TradingView "Export chart data" files and most broker exports:
 one file per ticker, a date column and a close column, optional volume.
 """
+
 from __future__ import annotations
 
 import io

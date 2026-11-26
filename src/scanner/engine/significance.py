@@ -4,6 +4,7 @@ Monthly returns are shuffled within each calendar year. This keeps every year's
 total trend and destroys any seasonal ordering. The number of windows passing the
 candidate filter in real data is compared with the counts from shuffled data.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -32,7 +33,7 @@ class _MonthlyGrid:
         n = len(lr)
         sums = np.full(n, np.nan)
         for i in range(n - length + 1):
-            seg = lr[i:i + length]
+            seg = lr[i : i + length]
             if not np.isnan(seg).any():
                 sums[i] = seg.sum()
         yrs = np.unique(self.years)
@@ -94,10 +95,12 @@ def permutation_test(
     grids = {t: _MonthlyGrid(s, last_complete[t], start_year, end_year) for t, s in universe.items() if len(s) > 2}
     actual = sum(_count(g, g.lr, lengths, classification) for g in grids.values())
     rng = np.random.default_rng(seed)
-    null = np.array([
-        sum(_count(g, _shuffle_within_year(g, rng), lengths, classification) for g in grids.values())
-        for _ in range(runs)
-    ])
+    null = np.array(
+        [
+            sum(_count(g, _shuffle_within_year(g, rng), lengths, classification) for g in grids.values())
+            for _ in range(runs)
+        ]
+    )
     return {
         "tickers": sorted(grids),
         "actual": int(actual),

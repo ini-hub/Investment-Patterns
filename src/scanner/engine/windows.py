@@ -1,4 +1,5 @@
 """Calendar windows and window returns (docs/SCOPE.md 8.1 and 8.2)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 @dataclass(frozen=True)
 class Window:
     start_month: int  # 1..12
-    length: int       # months
+    length: int  # months
 
     @property
     def name(self) -> str:
