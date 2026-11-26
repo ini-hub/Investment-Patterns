@@ -60,3 +60,35 @@ def test_unknown_ticker_message(universe):
     at = _start(universe, ["NOTREAL"], "Single report")
     _click(at, "Run scan")
     assert "No price data found for NOTREAL" in [e.value for e in at.error]
+
+
+MANY = ["FCMB", "VITAFOAM", "ETI", "IKEJAHOTEL", "LEARNAFRCA", "CONOIL", "CWG", "FTNCOCOA"]
+
+
+def _stock_table(at):
+    [table] = [d for d in at.dataframe if "Stock" in d.value.columns and "Tier 1" in d.value.columns]
+    return table.value
+
+
+def test_compare_many_uses_tables_and_filters(universe):
+    at = _start(universe, MANY, "Compare")
+    _click(at, f"Compare {len(MANY)} stocks")
+    assert f"Comparing {len(MANY)} stocks" in _text(at)
+    assert set(_stock_table(at)["Stock"]) == set(MANY)  # above 6 stocks: a table, not cards
+    assert "Ranked patterns" in [s.value for s in at.subheader]
+    [ranked] = [d.value for d in at.dataframe if "Window" in d.value.columns]
+    assert len(ranked) > 0 and set(ranked["Class"]) <= {"Tier 1", "Tier 2", "Watch", "Emerging"}
+
+    at.session_state["w_cmp_filters"] = ["Exclude frozen price"]
+    at.run()
+    assert not at.exception, at.exception
+    text = _text(at)
+    assert "Showing 6 of 8 stocks." in text  # CWG and FTNCOCOA are frozen (Appendix A.5)
+    assert ">CWG<" not in text and ">FTNCOCOA<" not in text  # back to cards, without the frozen stocks
+    assert "Window by window" in [s.value for s in at.subheader]
+
+    at.session_state["w_cmp_filters"] = ["Exclude frozen price", "Exclude no rising pattern"]
+    at.session_state["w_cmp_sort"] = "Ticker A to Z"
+    at.run()
+    assert not at.exception, at.exception
+    assert "Showing 6 of 8 stocks." in _text(at)  # all six remaining have a rising pattern

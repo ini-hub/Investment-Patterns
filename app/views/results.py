@@ -55,7 +55,7 @@ with st.container(horizontal=True, vertical_alignment="center"):
     with st.container(horizontal=True, horizontal_alignment="right", width="content"):
         if st.button("Add to comparison", icon=":material/add:"):
             current = list(st.session_state.get("w_tickers") or [])
-            st.session_state.w_tickers = list(dict.fromkeys([*current, t]))[: state.MAX_COMPARE]
+            st.session_state.w_tickers = list(dict.fromkeys([*current, t]))
             st.session_state.w_mode = "Compare"
             st.switch_page(st.session_state.pages["scan"])
         stamp = as_of.strftime("%Y%m%d")

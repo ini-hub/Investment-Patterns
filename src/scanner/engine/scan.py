@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -163,6 +164,7 @@ def scan_many(
     import_gaps: dict | None = None,
     ex_dividend_dates: dict | None = None,
     per_ticker_permutation: bool = True,
+    progress: Callable[[int, int, str], None] | None = None,
 ) -> tuple[dict[str, ScanResult], pd.DataFrame, dict | None, list[str]]:
     """Scan several tickers. Returns (results, combined stats, combined permutation, missing tickers).
 
@@ -172,7 +174,9 @@ def scan_many(
     cfg = config or load_config()
     each = per_ticker_permutation and len([t for t in tickers if t in universe]) > 1
     results, missing = {}, []
-    for t in tickers:
+    for i, t in enumerate(tickers):
+        if progress:
+            progress(i, len(tickers), f"Scanning {t}")
         if t not in universe:
             missing.append(t)
             continue
@@ -191,6 +195,8 @@ def scan_many(
         combined = cl.sort_stats(combined)
     perm = None
     if results and cfg["significance"]["runs"] > 0:
+        if progress:
+            progress(len(tickers), len(tickers), f"Chance check across {len(results)} stocks")
         lengths = sorted({w.length for w in windows_from_config(cfg)})
         perm = permutation_test(
             {t: universe[t] for t in results},

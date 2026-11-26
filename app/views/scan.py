@@ -34,6 +34,13 @@ ensure("w_start_year", 0)
 ensure("w_end_year", 0)
 
 
+def _duration(seconds: float) -> str:
+    if seconds < 60:
+        return f"{max(5, round(seconds / 5) * 5):.0f} seconds"
+    minutes = round(seconds / 60)
+    return f"{minutes} minute{'s' if minutes != 1 else ''}"
+
+
 def _single() -> bool:
     return st.session_state.w_mode == "Single report"
 
@@ -44,7 +51,7 @@ def _on_mode() -> None:
 
 
 def _pick(tickers: list[str]) -> None:
-    st.session_state.w_tickers = tickers[: state.MAX_COMPARE]
+    st.session_state.w_tickers = list(tickers)
     st.session_state.w_mode = "Compare" if len(tickers) > 1 else st.session_state.w_mode
 
 
@@ -71,7 +78,7 @@ def _label(t: str) -> str:
 # ---------------------------------------------------------------- page
 ui.page_title(
     "Scan stocks for seasonal patterns",
-    lede="Enter one ticker for a full report, or up to six to compare them side by side. Every month, "
+    lede="Enter one ticker for a full report, or several (up to every stock) to compare them. Every month, "
     "rolling 2 and 3-month window and the full year is tested.",
 )
 
@@ -94,7 +101,7 @@ with st.container(key="card_scan", gap="small"):
             options,
             key="w_tickers",
             format_func=_label,
-            max_selections=1 if single else state.MAX_COMPARE,
+            max_selections=1 if single else None,
             accept_new_options=True,
             placeholder="Type a ticker, e.g. ETI",
             label_visibility="collapsed",
@@ -109,19 +116,30 @@ with st.container(key="card_scan", gap="small"):
         + (
             "Single report: one stock, every window, heatmap, calendar and year-by-year detail."
             if single
-            else f"{n} of {state.MAX_COMPARE} selected. Results line up window by window, strongest patterns first."
+            else f"{n} selected. Up to {state.CARD_LIMIT} line up side by side; more are shown as sortable tables "
+            "you can filter."
+            + (
+                f" Scanning {n} stocks takes about {_duration(state.estimate_seconds(n, sig['runs']))}."
+                if n > state.LARGE_SCAN
+                else ""
+            )
         )
         + "</p>"
     )
     with st.container(key="quickpicks", horizontal=True, vertical_alignment="center", gap="small", wrap=True):
         ui.md('<span class="ip-muted">Quick picks:</span>')
         avail = set(options)
+        if universe_tickers and not single:
+            all_label = f"All stocks ({len(universe_tickers)})"
+            st.button(all_label, on_click=_pick, args=(universe_tickers,), type="tertiary")
         t1 = [t for t in state.RESEARCH_TIER1 if t in avail]
         if t1:
             st.button(f"Research Tier 1 stocks ({len(t1)})", on_click=_pick, args=(t1,), type="tertiary")
         for sector, group in sector_groups([*avail]).items():
             if len(group) >= 2:
                 st.button(f"{sector} ({len(group)})", on_click=_pick, args=(group,), type="tertiary")
+        if len(st.session_state.w_tickers) > 1:
+            st.button("Clear", on_click=_pick, args=([],), type="tertiary", icon=":material/close:")
 
 # ---------------------------------------------------------------- price data
 st.subheader("Price data", anchor=False)
@@ -208,15 +226,22 @@ if run:
     if not windows_from_config(cfg):
         st.error("Turn on at least one window type in Settings.")
         st.stop()
-    with st.spinner("Scanning..."):
-        scan, errors, warnings = state.run_scan(
-            tickers,
-            source,
-            st.session_state.get("uploads") or [],
-            index_file,
-            st.session_state.w_exdiv,
-            st.session_state.w_as_of,
-        )
+    bar = st.progress(0.0, text="Loading data...")
+
+    def _progress(i: int, total: int, label: str) -> None:
+        bar.progress(min(i / max(total, 1), 1.0), text=f"{label} ({min(i + 1, total)} of {total})"
+                     if i < total else label)  # fmt: skip
+
+    scan, errors, warnings = state.run_scan(
+        tickers,
+        source,
+        st.session_state.get("uploads") or [],
+        index_file,
+        st.session_state.w_exdiv,
+        st.session_state.w_as_of,
+        progress=_progress,
+    )
+    bar.empty()
     for e in errors:
         st.error(e)
     for w in warnings:
