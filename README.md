@@ -36,13 +36,13 @@ pip install -e ".[dev]"
 streamlit run app/streamlit_app.py
 ```
 
-Then open the local address Streamlit prints (usually http://localhost:8501). Always start it from the repository root, so the app picks up its theme in `.streamlit/config.toml`.
+Then open the local address Streamlit prints (usually http://localhost:8501). After pulling changes to the engine (`src/`), stop the app with Ctrl+C and start it again: Streamlit reloads the app folder by itself, but not the installed `scanner` package. Always start it from the repository root, so the app picks up its theme in `.streamlit/config.toml`.
 
 The app has three screens:
 
-- **Scan**: pick one ticker for a single report, or up to six to compare. Choose the price data (open dataset, your CSV files, or both), adjust settings, and reopen recent scans from this session.
+- **Scan**: pick one ticker for a single report, or several to compare, up to every stock ("All stocks" quick pick; a full-market scan takes about 2 minutes, with a progress bar). Choose the price data (open dataset, your CSV files, or both), adjust settings, and reopen recent scans from this session.
 - **Results**: one stock. Summary tiles, the next window to open, and tabs for patterns, exit or avoid windows, heatmap, calendar, year-by-year detail, chance check, all windows and method. Exports: CSV, PDF and run details (JSON).
-- **Compare**: several stocks. Class counts per stock, a seasonal map (strongest class covering each month), a window-by-window table and the chance check for the group and for each stock.
+- **Compare**: several stocks. Filter out frozen-price stocks or stocks with no rising pattern, and sort by Tier 1 count, best median, chance check, exit windows or ticker. Up to 6 stocks show as cards with a window-by-window table; more show as a sortable stock table and a ranked pattern list (click a row to open that stock). The seasonal map and the chance check appear in both. Filters only change what is shown: exports and the chance check always cover every stock scanned.
 
 Company names and sectors come from [src/scanner/data/securities.csv](src/scanner/data/securities.csv), kept by hand for now. A ticker that is not listed still scans; it just shows without a name.
 

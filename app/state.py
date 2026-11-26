@@ -25,7 +25,18 @@ SOURCES = {
     "csv": ("My CSV files", "Upload TradingView or broker exports, for example to include 2026."),
     "both": ("Both", "Dataset for history and the market benchmark; your files take priority."),
 }
-MAX_COMPARE = 6
+CARD_LIMIT = 6  # Compare shows cards and side-by-side columns up to this many stocks, tables above it
+LARGE_SCAN = 20  # above this many stocks the Scan screen shows a time estimate
+# Measured on a laptop (Nov 2026): seconds per stock to scan, and per stock per 300 chance-check runs.
+SCAN_SECONDS, CHANCE_SECONDS = 0.22, 0.33
+
+
+def estimate_seconds(n: int, runs: int) -> float:
+    """Rough scan time: scanning, plus the chance check per stock and for the group."""
+    chance = CHANCE_SECONDS * runs / 300 * n * (2 if n > 1 else 1)
+    return n * SCAN_SECONDS + chance
+
+
 MAX_RECENT = 5
 # Research session (docs/SCOPE.md Appendix A.2): stocks with at least one Tier 1 window.
 RESEARCH_TIER1 = ["FCMB", "VITAFOAM", "ETI", "IKEJAHOTEL", "LEARNAFRCA"]
@@ -119,6 +130,7 @@ def run_scan(
     index_file,
     exdiv_text: str,
     as_of: dt.date,
+    progress=None,
 ) -> tuple[Scan | None, list[str], list[str]]:
     """Load data, scan and store the result. Returns (scan or None, errors, warnings)."""
     cfg = copy.deepcopy(config())
@@ -172,7 +184,9 @@ def run_scan(
         return None, errors, warnings
 
     as_of_ts = pd.Timestamp(as_of)
-    results, combined, perm, missing = scan_many(tickers, universe, benchmark, cfg, as_of_ts, import_gaps, exdiv)
+    results, combined, perm, missing = scan_many(
+        tickers, universe, benchmark, cfg, as_of_ts, import_gaps, exdiv, progress=progress
+    )
     scan = Scan(tickers, results, combined, perm, missing, as_of_ts, sources, bench_text)
     if results:
         rec = [s for s in recent() if s.tickers != tickers]
