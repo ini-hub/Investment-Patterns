@@ -126,7 +126,11 @@ def test_permutation_full_baseline(universe):
     uni = {t: universe[t] for t in RESEARCH_TICKERS}
     res = permutation_test(uni, {t: last_complete_month(s.index[-1]) for t, s in uni.items()},
                            [1, 2, 3], cfg["classification"], runs=p["runs"], seed=p["seed"])
-    assert res["actual"] == p["actual"]
-    assert round(res["null_mean"], 1) == p["null_mean"]
-    assert res["null_p95"] == p["null_p95"]
-    assert round(res["share_at_or_above"], 2) == p["share_at_or_above"]
+    got = {
+        "actual": res["actual"],
+        "null_mean": round(res["null_mean"], 2),
+        "null_p95": res["null_p95"],
+        "share_at_or_above": round(res["share_at_or_above"], 3),
+    }
+    want = {k: p[k] for k in got}
+    assert got == want
