@@ -102,7 +102,8 @@ def permutation_test(
         "tickers": sorted(grids),
         "actual": int(actual),
         "null_mean": float(null.mean()) if runs else np.nan,
-        "null_p95": float(np.percentile(null, 95)) if runs else np.nan,
+        # A whole number of patterns: the smallest shuffled count at or above the 95% point.
+        "null_p95": int(np.percentile(null, 95, method="higher")) if runs else np.nan,
         "share_at_or_above": float((null >= actual).mean()) if runs else np.nan,
         "runs": runs,
         "seed": seed,

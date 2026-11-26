@@ -34,7 +34,7 @@ Key findings that shaped the design:
 
 - **The strongest repeatable effect is market-wide.** The average NGX stock rose in December in 8 of 9 years and from November to January in 7 of 9 years (median +8.7%). It fell in March in 9 of 10 years.
 - **Some stocks amplify that cycle consistently.** Examples: FCMB from October to December (9 of 9 years up) and Vitafoam from November to January (8 of 9 years up, median +31.9%).
-- **Chance produces many apparent patterns.** A permutation test found 15 qualifying patterns against an average of about 9.5 expected from random data. About 12% of random runs matched or beat the real count. The tool must therefore show statistical context, not just hit rates.
+- **Chance produces many apparent patterns.** A permutation test found 15 qualifying patterns against an average of about 9.5 to 9.7 expected from random data. About 12% of random runs matched or beat the real count. The tool must therefore show statistical context, not just hit rates.
 - **Unadjusted prices produce false negative patterns** around ex-dividend dates. Examples: Vitafoam in February, Learn Africa in September.
 - **Some stocks had frozen prices** for long periods (CWG and FTN Cocoa from 2016 to 2020). Their patterns are not reliable.
 
@@ -667,8 +667,8 @@ Emerging: LEARNAFRCA May to Jul, up in each of the last 5 years (2021 to 2025), 
 | Measure | Value |
 |---|---|
 | Actual qualifying patterns | 15 |
-| Mean under random shuffling (300 runs, seed 7) | 9.5 |
-| 95th percentile under shuffling | 17 |
+| Mean under random shuffling (300 runs, seed 7) | 9.68 |
+| 95th percentile under shuffling (smallest run count at or above the 95% point) | 17 |
 | Share of shuffled runs ≥ actual | 12% |
 
 ---
@@ -684,3 +684,4 @@ Emerging: LEARNAFRCA May to Jul, up in each of the last 5 years (2021 to 2025), 
 | 26 Nov 2026 | The "Unreliable" label on frozen-price stocks now also covers Negative windows | Appendix A.4 already treats FTNCOCOA's negative windows as unreliable |
 | 26 Nov 2026 | Every CSV row carries data hash, code version and settings hash; a JSON run-details export holds the full settings | NF-3 provenance, while keeping the CSVs readable in Excel and pandas |
 | 26 Nov 2026 | Gherkin scenarios in 11.3 replaced by exact copies of `tests/features/` | The scope and the executable specifications had drifted apart |
+| 26 Nov 2026 | Appendix A.6 average under shuffling changed from 9.5 to 9.68; the 95th percentile is reported as a whole number of patterns | The research session's shuffle used a different random sequence. The Phase 1 code (300 runs, seed 7) gives 15 / 9.68 / 17 / 12%; the actual count, 95th percentile and share match the research, and the conclusion is unchanged |

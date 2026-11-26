@@ -58,6 +58,6 @@ permutation:   # Appendix A.6: 300 runs, seed 7, the 13 research stocks combined
   actual: 15
   runs: 300
   seed: 7
-  null_mean: 9.5
+  null_mean: 9.68
   null_p95: 17
   share_at_or_above: 0.12
