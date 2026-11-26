@@ -1,12 +1,14 @@
 // Cloudflare Worker that serves the public static site (invest.bolujo.com).
-// Workers Builds runs the build command `bash scripts/build_site.sh` (set in the dashboard) and then
-// `npx wrangler deploy`, which uploads site/ as static assets. There is no Worker script.
-// Builds of other branches (pull requests) run `npx wrangler preview`, which needs the `previews` block.
+// Workers Builds runs `npx wrangler deploy` (main) or `npx wrangler preview` (other branches; needs the
+// `previews` block). Wrangler first runs `build.command`, which scans every stock and writes site/data/,
+// then uploads site/ as static assets. There is no Worker script. Leave the dashboard build command empty,
+// or the scan runs twice.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "investment-patterns",
   "compatibility_date": "2026-11-23",
   "assets": { "directory": "site" },
   "observability": { "enabled": true },
-  "previews": {}
+  "previews": {},
+  "build": { "command": "bash scripts/build_site.sh" }
 }
