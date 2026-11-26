@@ -1,0 +1,27 @@
+# Price data is never committed (see docs/SCOPE.md, section 7.3)
+/data/
+/.cache/
+/exports/
+*.csv
+!tests/regression/fixtures/*.csv
+!tests/unit/fixtures/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.venv/
+venv/
+build/
+dist/
+
+# Environment and secrets
+.env
+.streamlit/secrets.toml
+
+# OS and editor
+.DS_Store
+.idea/
+.vscode/

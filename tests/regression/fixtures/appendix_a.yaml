@@ -1,0 +1,63 @@
+# Baseline results from the research session (docs/SCOPE.md, Appendix A).
+# Dataset: NairaDB commit 4de805b, daily closes to 2025-12-19, unadjusted.
+# Tolerance for percentages: 0.1 percentage points.
+
+window_returns:
+  - {ticker: FCMB, window: Oct-Dec, year: 2017, entry: 1.07, entry_date: 2017-09-29, exit: 1.48, exit_date: 2017-12-29, ret: 0.383}
+  - {ticker: VITAFOAM, window: Nov-Jan, year: 2019, entry: 3.50, entry_date: 2019-10-31, exit: 5.50, exit_date: 2020-01-31, ret: 0.571}
+  - {ticker: IKEJAHOTEL, window: Dec-Feb, year: 2023, entry: 4.20, entry_date: 2023-11-30, exit: 7.50, exit_date: 2024-02-29, ret: 0.786}
+
+market:   # trimmed-mean benchmark
+  - {window: Dec, n: 9, up: 8, median: 0.017}
+  - {window: Nov-Jan, n: 9, up: 7, median: 0.087}
+  - {window: Jan, n: 10, up: 7, median: 0.035}
+  - {window: Mar, n: 10, up: 1, median: -0.019}
+  - {window: Feb-Apr, n: 10, up: 3, median: -0.020}
+
+tier1:    # in ranked order
+  - {ticker: FCMB, window: Oct-Dec, up: 9, n: 9, streak: 9, median: 0.121, worst: 0.028, beat_market: 8, median_dip: -0.042, worst_dip: -0.258}
+  - {ticker: IKEJAHOTEL, window: Dec-Feb, up: 7, n: 8, streak: 7, median: 0.257, worst: 0.000, beat_market: 7, median_dip: 0.000, worst_dip: -0.173}
+  - {ticker: FCMB, window: Jan, up: 9, n: 10, streak: 9, median: 0.064, worst: -0.420, beat_market: 8, median_dip: -0.032, worst_dip: -0.426}
+  - {ticker: VITAFOAM, window: Nov-Jan, up: 8, n: 9, streak: 8, median: 0.319, worst: -0.028, beat_market: 6, median_dip: -0.045, worst_dip: -0.114}
+  - {ticker: ETI, window: Dec-Jan, up: 8, n: 9, streak: 6, median: 0.192, worst: -0.122, beat_market: 6, median_dip: -0.032, worst_dip: -0.154}
+  - {ticker: VITAFOAM, window: Jan, up: 8, n: 10, streak: 8, median: 0.092, worst: -0.157, beat_market: 8, median_dip: -0.011, worst_dip: -0.157}
+  - {ticker: FCMB, window: Dec-Jan, up: 8, n: 9, streak: 5, median: 0.242, worst: -0.055, beat_market: 6, median_dip: -0.033, worst_dip: -0.141}
+  - {ticker: LEARNAFRCA, window: Nov-Jan, up: 8, n: 9, streak: 4, median: 0.163, worst: -0.082, beat_market: 6, median_dip: -0.094, worst_dip: -0.118}
+
+tier2:
+  - {ticker: VITAFOAM, window: Mar-May, up: 9, n: 10, streak: 1, median: 0.102, worst: -0.333}
+  - {ticker: CONOIL, window: May, up: 8, n: 10, streak: 0, median: 0.079, worst: -0.100}
+  - {ticker: ETI, window: May, up: 8, n: 10, streak: 1, median: 0.078, worst: -0.181}
+  - {ticker: FCMB, window: Nov-Jan, up: 8, n: 9, streak: 3, median: 0.253, worst: -0.019}
+  - {ticker: VITAFOAM, window: Mar-Apr, up: 8, n: 10, streak: 1, median: 0.118, worst: -0.333}
+  - {ticker: CONOIL, window: May-Jun, up: 8, n: 10, streak: 0, median: 0.138, worst: -0.292}
+  - {ticker: VITAFOAM, window: Apr-May, up: 8, n: 10, streak: 1, median: 0.132, worst: -0.152}
+
+watch_count: 16
+negative_count: 25
+negative_top:   # first 11 in ranked order
+  - {ticker: IKEJAHOTEL, window: Mar, up: 0, n: 9, median: -0.143}
+  - {ticker: ETI, window: Feb-Mar, up: 0, n: 10, median: -0.084}
+  - {ticker: FTNCOCOA, window: Feb-Mar, up: 0, n: 10, median: -0.079}
+  - {ticker: CONOIL, window: Mar-Apr, up: 0, n: 10, median: -0.076}
+  - {ticker: FCMB, window: Feb-Mar, up: 1, n: 10, median: -0.096}
+  - {ticker: CONOIL, window: Mar, up: 1, n: 10, median: -0.083}
+  - {ticker: LEARNAFRCA, window: Sep, up: 1, n: 10, median: -0.067}
+  - {ticker: IKEJAHOTEL, window: Jul-Sep, up: 1, n: 9, median: -0.114}
+  - {ticker: FTNCOCOA, window: Jan-Mar, up: 1, n: 9, median: -0.077}
+  - {ticker: IKEJAHOTEL, window: Jul-Aug, up: 1, n: 9, median: -0.057}
+  - {ticker: VITAFOAM, window: Feb-Mar, up: 2, n: 10, median: -0.163}
+
+emerging_includes:
+  - {ticker: LEARNAFRCA, window: May-Jul}
+
+frozen: [CWG, FTNCOCOA, BUAFOODS]
+all_insufficient: [BUAFOODS, BUACEMENT]
+
+permutation:   # Appendix A.6: 300 runs, seed 7, the 13 research stocks combined
+  actual: 15
+  runs: 300
+  seed: 7
+  null_mean: 9.5
+  null_p95: 17
+  share_at_or_above: 0.12

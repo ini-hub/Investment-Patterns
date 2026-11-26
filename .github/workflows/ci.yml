@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    env:
+      REQUIRE_DATASET: "1"          # regression tests must run, not skip
+      NAIRADB_CACHE: ${{ github.workspace }}/data/nairadb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Cache NairaDB snapshot
+        uses: actions/cache@v4
+        with:
+          path: data/nairadb
+          key: nairadb-4de805bb7e88f82cc54cdb011e6b019af0ae539f
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Download dataset snapshot
+        run: python -c "from scanner.data import ensure_dataset; print(ensure_dataset())"
+
+      - name: Unit tests
+        run: pytest tests/unit -q
+
+      - name: Regression tests (Appendix A baseline)
+        run: pytest tests/regression -q
+
+      - name: Acceptance tests (Gherkin)
+        run: pytest tests/features -q

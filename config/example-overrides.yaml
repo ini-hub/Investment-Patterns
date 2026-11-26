@@ -1,0 +1,14 @@
+# Example settings file. Defaults live in src/scanner/default.yaml.
+# Only include the values you want to change, then load with:
+#   from scanner.config import load_config
+#   cfg = load_config("config/example-overrides.yaml")
+
+lookback:
+  start_year: 2018
+
+classification:
+  min_years: 6
+  candidate_hit_rate: 0.75
+
+significance:
+  runs: 1000

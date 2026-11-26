@@ -1,0 +1,46 @@
+# Default analysis settings. Every value can be overridden in the app or in code.
+# Definitions: docs/SCOPE.md, section 8.
+
+windows:
+  single_month: true      # 12 windows
+  rolling_2_month: true   # 12 windows, crossing the year end where needed
+  rolling_3_month: true   # 12 windows, includes the standard quarters
+  full_year: true         # 1 window
+
+lookback:
+  start_year: null        # first window year to include; null = all available
+  end_year: null          # last window year to include; null = latest complete
+
+benchmark:
+  min_stocks: 30          # market benchmark needs at least this many stocks per window-year
+  trim: 0.10              # trimmed mean: cut this share from each tail
+
+classification:
+  min_years: 8            # windows with fewer complete years are "Insufficient history"
+  candidate_hit_rate: 0.80
+  candidate_own_rate: 0.70
+  candidate_min_median: 0.05
+  tier1_min_streak: 4
+  tier1_market_rate: 0.666   # two thirds of years
+  watch_hit_rate: 0.70
+  watch_own_rate: 0.60
+  watch_min_median: 0.05
+  watch_min_streak: 3
+  negative_max_hit_rate: 0.20
+  negative_max_median: -0.05
+  emerging_min_streak: 5
+  emerging_min_median: 0.05
+  score_weights:
+    hit_rate: 0.4
+    own_rate: 0.3
+    market_rate: 0.3
+
+quality:
+  frozen_zero_share: 0.30         # share of month-end changes that are exactly 0%
+  corporate_action_move: 0.105    # single-day move beyond this is flagged
+  gap_business_days: 10           # gap between consecutive prices longer than this
+  stale_business_days: 5          # last price older than this many business days
+
+significance:
+  runs: 300
+  seed: 7
