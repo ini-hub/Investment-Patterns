@@ -1,7 +1,7 @@
 """Heatmap of window returns: windows as rows, years as columns.
 
-Diverging scale (red for losses, neutral grey at 0%, blue for gains) so it reads
-for common colour-vision deficiencies; every cell also prints its value.
+Diverging scale (orange for losses, neutral grey at 0%, blue for gains). Blue and orange
+also differ in lightness, so it reads for common colour-vision deficiencies; every cell also prints its value.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-NEG, MID, POS = "#ec4647", "#efefef", "#257de0"
+NEG, MID, POS = "#C2410C", "#F1F3F6", "#1D4ED8"
 TEXT = "#191919"
 
 

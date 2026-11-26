@@ -162,9 +162,15 @@ def scan_many(
     as_of: pd.Timestamp | None = None,
     import_gaps: dict | None = None,
     ex_dividend_dates: dict | None = None,
+    per_ticker_permutation: bool = True,
 ) -> tuple[dict[str, ScanResult], pd.DataFrame, dict | None, list[str]]:
-    """Scan several tickers. Returns (results, combined stats, combined permutation, missing tickers)."""
+    """Scan several tickers. Returns (results, combined stats, combined permutation, missing tickers).
+
+    The permutation test runs on the combined set and, when several tickers are scanned,
+    for each ticker as well (docs/SCOPE.md 8.5); each ScanResult.permutation holds its own.
+    """
     cfg = config or load_config()
+    each = per_ticker_permutation and len([t for t in tickers if t in universe]) > 1
     results, missing = {}, []
     for t in tickers:
         if t not in universe:
@@ -176,7 +182,7 @@ def scan_many(
             benchmark,
             cfg,
             as_of,
-            run_permutation=False,
+            run_permutation=each,
             import_gaps=(import_gaps or {}).get(t),
             ex_dividend_dates=(ex_dividend_dates or {}).get(t),
         )
@@ -196,4 +202,6 @@ def scan_many(
             cfg["lookback"]["start_year"],
             cfg["lookback"]["end_year"],
         )
+        if len(results) == 1:
+            next(iter(results.values())).permutation = perm
     return results, combined, perm, missing

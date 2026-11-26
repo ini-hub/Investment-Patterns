@@ -1,0 +1,15 @@
+# Look of the web app (matches the design canvas: Inter body, Space Grotesk headings, blue accent).
+[theme]
+base = "light"
+primaryColor = "#1D4ED8"
+backgroundColor = "#F6F7F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#14171F"
+borderColor = "#D5D9E0"
+baseRadius = "10px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Space Grotesk:https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+
+[client]
+toolbarMode = "minimal"
+showSidebarNavigation = false
