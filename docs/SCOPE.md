@@ -557,9 +557,9 @@ Feature: CSV import
 
 | ID | Decision | Options | Needed by |
 |---|---|---|---|
-| D1 | Who uses the tool | Owner only, private group, public free, public paid | Before Phase 3 |
+| D1 | Who uses the tool | Resolved 26 Nov 2026: public. The owner accepts the Section 7.3 licensing risk; the public site publishes returns and statistics only, never closing prices | Closed |
 | D2 | Data budget | NGX end-of-day subscription, third-party provider, manual CSV only | Before Phase 2 |
-| D3 | Hosting | Streamlit Community Cloud, a cloud virtual machine, own server | Before Phase 2 |
+| D3 | Hosting | Resolved 26 Nov 2026: public static site on Cloudflare Pages at investment.bolujo.com (built from main); the Streamlit app stays a private research tool | Closed |
 | D4 | Repository | Resolved: ini-hub/Investment-Patterns, Phase 1 on branch phase-1-pattern-scanner | Closed |
 | D5 | Missing tickers | Confirm exact NGX tickers for "Greenwich" and "SIAML" and whether they are ETFs | Before Phase 1 regression run |
 | D6 | NairaDB licence | Resolved in Phase 1: the dataset has no licence file, so it is downloaded at runtime (pinned commit) and never committed | Closed |
@@ -688,3 +688,4 @@ Emerging: LEARNAFRCA May to Jul, up in each of the last 5 years (2021 to 2025), 
 | 26 Nov 2026 | Multi-ticker scans now report the chance check for each stock as well as for the group | Section 8.5 required it; the first build only ran the combined test |
 | 26 Nov 2026 | App redesigned into Scan, Results and Compare screens from the owner's design canvas; company names and sectors added from a hand-kept list (src/scanner/data/securities.csv) | Owner design review. Names have no data source until Phase 2's securities table |
 | 26 Nov 2026 | Compare accepts any number of stocks (an "All stocks" pick scans the whole dataset); above 6 it switches to a sortable stock table and ranked pattern list; filters exclude frozen-price stocks and stocks with no rising pattern (Tier 1, Tier 2, Watch or Emerging) | Owner request. The chance check always covers the full scan, so filtering cannot make chance patterns look real |
+| 26 Nov 2026 | Public static site for investment.bolujo.com (site/, built by scanner.publish, hosted on Cloudflare Pages): all stocks pre-scanned with default settings; no uploads or custom settings; no closing prices published | Owner chose a public site (D1) with free hosting (D3); a static build cannot be overloaded and limits the data published |

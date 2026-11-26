@@ -46,6 +46,31 @@ The app has three screens:
 
 Company names and sectors come from [src/scanner/data/securities.csv](src/scanner/data/securities.csv), kept by hand for now. A ticker that is not listed still scans; it just shows without a name.
 
+## Public site (investment.bolujo.com)
+
+A static version of the app for visitors lives in [site/](site/): plain HTML, CSS and JavaScript, no server. At build time `python -m scanner.publish` scans every stock with the default settings and writes JSON to `site/data/`; the page reads those files. It publishes returns and statistics only, never closing prices (see docs/SCOPE.md 7.3). Visitors can pick stocks, open single-stock results and compare any number of stocks with filters; they cannot upload files or change settings. The Streamlit app stays the full research tool.
+
+Build and preview locally:
+
+```bash
+bash scripts/build_site.sh            # about 2 minutes; writes site/data/
+python -m http.server 8600 -d site    # then open http://localhost:8600
+```
+
+### Cloudflare Pages setup (one time)
+
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → choose `ini-hub/Investment-Patterns`.
+2. Build settings:
+   - Production branch: `main`
+   - Framework preset: None
+   - Build command: `bash scripts/build_site.sh`
+   - Build output directory: `site`
+   - Environment variable: `PYTHON_VERSION` = `3.12`
+3. **Save and Deploy**. The first build takes about 4 minutes.
+4. In the project → **Custom domains** → **Set up a custom domain** → `investment.bolujo.com`. With bolujo.com on Cloudflare, the DNS record and SSL certificate are created for you.
+
+Every merge to `main` rebuilds the site. [site/_headers](site/_headers) sets security headers and data caching.
+
 ## Data sources
 
 | Source | How to use it |

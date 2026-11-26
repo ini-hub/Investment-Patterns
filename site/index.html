@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investment Patterns · NGX seasonal patterns</title>
+<meta name="description" content="Seasonal patterns in Nigerian Exchange (NGX) stocks: which calendar months and windows have risen or fallen year after year, tested against the market and against chance.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231D4ED8'/%3E%3Cpath d='M7 22l6-7 5 4 7-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<a class="sr-only" href="#app">Skip to content</a>
+<header class="topbar">
+  <div class="in">
+    <a class="brand" href="#/">Investment Patterns</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-nav="scan">Scan</a>
+      <a href="#/compare/all" data-nav="compare">Compare</a>
+      <span title="Planned for a later phase">Watchlist (coming later)</span>
+    </nav>
+    <div class="status" id="status"><span class="dot" aria-hidden="true"></span><span>Loading data…</span></div>
+  </div>
+</header>
+<main id="app" tabindex="-1"><p class="loading">Loading…</p></main>
+<footer>
+  <p><strong>Research tool, not investment advice.</strong> Past seasonal behaviour does not guarantee future results.
+  Returns are calculated from unadjusted daily closes (dividends and bonus issues are not added back) and exclude trading
+  costs, slippage and the exchange's daily price limits.</p>
+  <p id="source">Data: open NairaDB dataset of NGX daily closes.</p>
+  <noscript><p>This site needs JavaScript to show the results.</p></noscript>
+</footer>
+</body>
+</html>
