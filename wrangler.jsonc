@@ -1,0 +1,10 @@
+// Cloudflare Worker that serves the public static site (invest.bolujo.com).
+// Workers Builds runs the build command `bash scripts/build_site.sh` (set in the dashboard) and then
+// `npx wrangler deploy`, which uploads site/ as static assets. There is no Worker script.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "investment-patterns",
+  "compatibility_date": "2026-11-23",
+  "assets": { "directory": "site" },
+  "observability": { "enabled": true }
+}

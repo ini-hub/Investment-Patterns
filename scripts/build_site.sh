@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build the public static site (investment.bolujo.com).
-# Cloudflare Pages runs this from the repository root:
+# Build the public static site (invest.bolujo.com).
+# Cloudflare Workers Builds runs this from the repository root (see wrangler.jsonc):
 #   Build command:           bash scripts/build_site.sh
-#   Build output directory:  site
+#   Deploy command:          npx wrangler deploy  (uploads site/)
 # It downloads the pinned dataset, scans every stock with the default settings and writes site/data/.
 set -euo pipefail
 python --version
