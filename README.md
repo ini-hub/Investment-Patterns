@@ -64,12 +64,12 @@ The site is a Cloudflare Worker with static assets, configured by [wrangler.json
 1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Import a repository** → choose `ini-hub/Investment-Patterns`. Project name: `investment-patterns` (it must match `name` in wrangler.jsonc).
 2. In the Worker → **Settings** → **Build**:
    - Branch: `main`
-   - Build command: `bash scripts/build_site.sh` (**required**: without it the page deploys with no `data/` and shows "data/index.json: HTTP 404")
+   - Build command: leave empty. `wrangler deploy` runs `bash scripts/build_site.sh` itself (the `build` block in wrangler.jsonc); without that step the page deploys with no `data/` and shows "data/index.json: HTTP 404"
    - Deploy command: `npx wrangler deploy`
    - Non-production branch deploy command: `npx wrangler preview` (the default; it builds a preview for each pull request and needs the `previews` block in wrangler.jsonc)
    - Root directory: leave empty
    - Build variables: `PYTHON_VERSION` = `3.12`
-3. Deploy. A build takes about 3 to 7 minutes and its log ends with `Site ready in site/ (147 stocks)` followed by the asset upload (about 150 files).
+3. Deploy. A build takes about 4 to 7 minutes. In the log, `[custom build]` lines show the scan, then `Site ready in site/ (147 stocks)`, then the asset upload (about 150 files).
 4. In the Worker → **Settings** → **Domains & Routes** → **Add** → **Custom domain** → `invest.bolujo.com`. With bolujo.com on Cloudflare, the DNS record and SSL certificate are created for you.
 
 Every merge to `main` rebuilds the site. [site/_headers](site/_headers) sets security headers and data caching.
