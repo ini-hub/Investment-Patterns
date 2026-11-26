@@ -4,6 +4,7 @@
 /exports/
 *.csv
 !tests/regression/fixtures/*.csv
+!src/scanner/data/securities.csv
 !tests/unit/fixtures/*.csv
 
 # Python

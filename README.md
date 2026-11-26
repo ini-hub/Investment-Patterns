@@ -36,7 +36,15 @@ pip install -e ".[dev]"
 streamlit run app/streamlit_app.py
 ```
 
-Then open the local address Streamlit prints, type a ticker (for example `FCMB`, or `FCMB, VITAFOAM, ETI`) and press **Run scan**.
+Then open the local address Streamlit prints (usually http://localhost:8501). Always start it from the repository root, so the app picks up its theme in `.streamlit/config.toml`.
+
+The app has three screens:
+
+- **Scan**: pick one ticker for a single report, or up to six to compare. Choose the price data (open dataset, your CSV files, or both), adjust settings, and reopen recent scans from this session.
+- **Results**: one stock. Summary tiles, the next window to open, and tabs for patterns, exit or avoid windows, heatmap, calendar, year-by-year detail, chance check, all windows and method. Exports: CSV, PDF and run details (JSON).
+- **Compare**: several stocks. Class counts per stock, a seasonal map (strongest class covering each month), a window-by-window table and the chance check for the group and for each stock.
+
+Company names and sectors come from [src/scanner/data/securities.csv](src/scanner/data/securities.csv), kept by hand for now. A ticker that is not listed still scans; it just shows without a name.
 
 ## Data sources
 
@@ -94,6 +102,7 @@ pytest                       # everything
 pytest tests/unit            # fast, no data needed
 pytest tests/regression      # checks results against the research baseline (downloads the dataset)
 pytest tests/features        # Gherkin acceptance scenarios
+pytest tests/integration     # app smoke tests: each screen renders (needs the dataset)
 ruff check . && ruff format --check .   # lint, as CI runs it
 ```
 
@@ -103,7 +112,9 @@ ruff check . && ruff format --check .   # lint, as CI runs it
 ## Project layout
 
 ```
-app/streamlit_app.py        web app
+app/streamlit_app.py        web app entry: navigation and top bar
+app/views/                  Scan, Results and Compare screens
+app/state.py, app/ui.py     shared session state and visual components
 src/scanner/data/           CSV and dataset loaders, validation
 src/scanner/engine/         windows, statistics, benchmarks, classification, chance check, quality
 src/scanner/report/         tables, heatmap, calendar, CSV and PDF export, method text

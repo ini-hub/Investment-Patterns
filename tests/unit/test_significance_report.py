@@ -168,3 +168,15 @@ def test_frozen_stock_negative_windows_marked_unreliable():
     mar = res.stats[res.stats["window"] == "Mar"].iloc[0]
     assert mar["class"] == "Negative"
     assert "Unreliable" in mar["flags"]
+
+
+def test_scan_many_reports_permutation_per_ticker():
+    from scanner.engine import scan_many
+
+    uni = {"A": seasonal_series(), "B": seasonal_series(up_months=(5, 6), start=20.0)}
+    cfg = load_config(overrides={"significance": {"runs": 10}})
+    results, _, combined, _ = scan_many(["A", "B"], uni, None, cfg)
+    assert combined["tickers"] == ["A", "B"]
+    assert results["A"].permutation["tickers"] == ["A"] and results["B"].permutation["tickers"] == ["B"]
+    single, _, perm, _ = scan_many(["A"], uni, None, cfg)
+    assert single["A"].permutation == perm  # one ticker: the combined test is that ticker's test

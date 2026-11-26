@@ -30,7 +30,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-scanner = ["default.yaml"]
+scanner = ["default.yaml", "data/securities.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

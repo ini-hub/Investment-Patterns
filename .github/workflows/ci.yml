@@ -46,3 +46,6 @@ jobs:
 
       - name: Acceptance tests (Gherkin)
         run: pytest tests/features -q
+
+      - name: App smoke tests (every screen renders)
+        run: pytest tests/integration -q
