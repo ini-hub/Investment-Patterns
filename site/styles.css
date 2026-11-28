@@ -176,6 +176,23 @@ select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong)
 .r.sell .tag { background: #dcfce7; color: #14532d; }
 .r.avoid .tag { background: #ffedd5; color: #9a3412; }
 .frz { font-size: 11px; font-weight: 600; color: #9a3412; }
+.scroll-x { position: relative; overflow-x: auto; } /* relative: keeps the cells' .sr-only text inside the scroll box */
+.rgrid { width: 100%; min-width: 680px; border-collapse: separate; border-spacing: 3px; font-size: 12px; }
+.rgrid thead th { padding: 4px 0; font-weight: 600; color: var(--muted); text-align: center; border-radius: 4px; }
+.rgrid thead th:first-child { width: 1%; text-align: left; }
+.rgrid thead th.now { background: var(--ink); color: #fff; }
+.rgrid th[scope="row"] { position: sticky; left: 0; z-index: 1; padding: 0 10px 0 0; background: var(--card); text-align: left; white-space: nowrap; }
+.rgrid th[scope="row"] a { font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.rgrid th[scope="row"] a:hover { color: var(--blue); }
+.rgrid td.g { height: 32px; border-radius: 4px; text-align: center; font-weight: 700; cursor: pointer; }
+.rgrid td.now { box-shadow: inset 0 0 0 2px var(--ink); }
+.rgrid td.past { opacity: 0.55; }
+.g { background: #f1f3f6; color: var(--muted); }
+.g.buy, .g.buysell { background: var(--blue); color: #fff; }
+.g.hold { background: #dbe4ff; color: var(--blue-dark); }
+.g.sell { background: #dcfce7; color: #14532d; }
+.g.avoid { background: #ffedd5; color: #9a3412; }
+.legend i.g { width: auto; min-width: 22px; height: 18px; padding: 0 3px; font-size: 10px; font-style: normal; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .plist { display: flex; flex-direction: column; gap: 14px; }
 .pstock { border-top: 1px solid #eef0f3; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .pstock .tk { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--ink); text-decoration: none; }
@@ -197,5 +214,8 @@ select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong)
   .months { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .mbox { padding: 8px 10px; min-height: 0; break-inside: avoid; }
   .mbox.past { opacity: 1; }
+  .rgrid td.past { opacity: 1; }
+  .rgrid th[scope="row"] { position: static; }
+  #grid-detail { display: none; }
   .pill.win[aria-pressed="false"] { display: none; }
 }

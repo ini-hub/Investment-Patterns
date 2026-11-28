@@ -2,7 +2,7 @@
 // Screens (hash routes): #/ scan · #/stock/TICKER results · #/compare/all or #/compare/A,B,C compare ·
 // #/roadmap (this browser's year roadmap) or #/roadmap/YEAR/TICKER:key,... (a shared one).
 
-import { PICKABLE, calendarFile, decodePlan, defaultWindows, encodePlan, lastBday, monthBoard, shortDay, trades, wkey } from './roadmap.js'
+import { PICKABLE, calendarFile, decodePlan, defaultWindows, encodePlan, lastBday, monthBoard, shortDay, stockGrid, trades, wkey } from './roadmap.js'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -639,6 +639,18 @@ function avoidText(ws) {
   const fell = sameN ? `fell in ${lo === hi ? lo : `${lo} to ${hi}`} of ${ws[0].n} years` : 'fell in most years'
   return `${ws.map((w) => w.window).join(', ')} · ${fell}`
 }
+const LETTER = { buy: 'B', sell: 'S', hold: 'H', buysell: 'B+S', avoid: '×', '': '' }
+const ACTIONS = ['buy', 'buysell', 'sell']
+function cellText(t, m, entries) {
+  if (!entries.length) return `${t}, ${MONTHS_LONG[m]}: nothing planned.`
+  return `${t}, ${MONTHS_LONG[m]}: ` + entries.map((c) => {
+    if (c.role === 'avoid') return `exit or avoid (${avoidText(c.ws)})`
+    const when = [c.role === 'buy' || c.role === 'buysell' ? `buy at the close of ${shortDay(c.entry)}` : '',
+      c.role === 'sell' || c.role === 'buysell' ? `sell at the close of ${shortDay(c.exit)}` : '',
+      c.role === 'hold' ? `hold until ${shortDay(c.exit)}` : ''].filter(Boolean).join(', ')
+    return `${c.w.window} ${c.w.class}: ${when}`
+  }).join('; ') + '.'
+}
 function boardRow(c) {
   const w = c.w
   const stats = `up ${w.up} of ${w.n} years, median ${pct(w.median)}`
@@ -699,11 +711,30 @@ function renderRoadmap(yearArg, itemsArg) {
     return
   }
 
-  const monthsHtml = `<section class="months">${board.map((cells, m) => `
+  const grid = stockGrid(plan, board)
+  const legend = [['buy', 'Buy'], ['hold', 'Hold'], ['sell', 'Sell'], ['buysell', 'Buy and sell'], ...(plan.exits ? [['avoid', 'Exit or avoid']] : [])]
+  const gridHtml = `<section class="card">
+    <div class="row spread"><h2>Stocks by month</h2>
+      <div class="legend">${legend.map(([k, l]) => `<span><i class="g ${k}">${LETTER[k]}</i>${l}</span>`).join('')}</div></div>
+    <div class="scroll-x"><table class="rgrid" aria-label="Plan for each stock, month by month">
+      <thead><tr><th scope="col">Stock</th>${MONTHS.map((mm, i) => `<th scope="col"${i === nowM ? ' class="now"' : ''}>${mm}</th>`).join('')}</tr></thead>
+      <tbody>${grid.map((r) => `<tr><th scope="row"><a href="#/stock/${esc(r.ticker)}">${esc(r.ticker)}</a>${S.byTicker.get(r.ticker)?.frozen ? ' <span class="frz" title="Frozen price: patterns unreliable">frozen</span>' : ''}</th>
+        ${r.months.map((c, m) => {
+          const text = cellText(r.ticker, m, c.entries)
+          return `<td class="g ${c.code}${m === nowM ? ' now' : ''}${m < pastBefore ? ' past' : ''}" tabindex="0" data-detail="${esc(text)}" title="${esc(text)}"><span aria-hidden="true">${LETTER[c.code]}</span><span class="sr-only">${esc(text)}</span></td>`
+        }).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+    <p class="muted" id="grid-detail" aria-live="polite">Select a cell for its windows and dates. Buy is at the close of the month before; sell at the close of the month shown.</p>
+  </section>`
+
+  const monthsHtml = `<h2 style="margin-top:8px">Buys and sells by month</h2><section class="months">${board.map((cells, m) => {
+    const acts = cells.filter((c) => ACTIONS.includes(c.role))
+    return `
     <article class="mbox${m === nowM ? ' now' : ''}${m < pastBefore ? ' past' : ''}">
       <h3>${MONTHS_LONG[m]}${m === nowM ? ' <span class="badge" style="background:#14171F;color:#fff">This month</span>' : ''}</h3>
-      ${cells.length ? `<ul>${cells.map(boardRow).join('')}</ul>` : '<p class="muted">Nothing planned.</p>'}
-    </article>`).join('')}</section>`
+      ${acts.length ? `<ul>${acts.map(boardRow).join('')}</ul>` : '<p class="muted">No buys or sells.</p>'}
+    </article>`
+  }).join('')}</section>`
 
   const stocks = plan.items.map((i) => {
     const s = S.byTicker.get(i.t)
@@ -736,6 +767,7 @@ function renderRoadmap(yearArg, itemsArg) {
       <span class="muted">${n} stock${n === 1 ? '' : 's'} · ${nWindows} window${nWindows === 1 ? '' : 's'} on the calendar</span>
     </section>
     ${nWindows ? '' : callout('info', 'No windows are switched on yet. Pick some under <strong>Stocks in this roadmap</strong> below.')}
+    ${gridHtml}
     ${monthsHtml}
     <section class="card">
       <div class="row spread"><h2>Stocks in this roadmap (${n})</h2>${editable ? '<button class="btn small no-print" data-act="clear">Clear roadmap</button>' : ''}</div>
@@ -748,6 +780,11 @@ function renderRoadmap(yearArg, itemsArg) {
     document.getElementById('plan-year').addEventListener('change', (e) => {
       const y = Number(e.target.value)
       if (editable) { S.plan.year = y; savePlan(); rerender() } else location.hash = `#/roadmap/${encodePlan({ ...plan, year: y })}`
+    })
+    app.querySelectorAll('td[data-detail]').forEach((td) => {
+      const show = () => { document.getElementById('grid-detail').textContent = td.dataset.detail }
+      td.addEventListener('click', show)
+      td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show() } })
     })
     app.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', async () => {
       const { act, v } = el.dataset

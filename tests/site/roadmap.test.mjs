@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { calendarFile, decodePlan, defaultWindows, encodePlan, lastBday, monthBoard, occurrences, trades, wkey } from '../../site/roadmap.js'
+import { calendarFile, decodePlan, defaultWindows, encodePlan, lastBday, monthBoard, occurrences, stockGrid, trades, wkey } from '../../site/roadmap.js'
 
 const w = (window, start_month, length, cls, extra = {}) => ({ window, start_month, length, class: cls, n: 10, up: 9, median: 0.1, score: 0.5, ...extra })
 const FCMB = {
@@ -71,6 +71,18 @@ test('monthBoard places planned windows and, optionally, exit-or-avoid markers',
   assert.deepEqual(clash[7].map((c) => c.role), ['avoid'])
   assert.deepEqual(clash[8].map((c) => c.role), ['buysell'])
   assert.deepEqual(merged[8].map((c) => c.ws.map((x) => x.window)), [['Aug-Sep']])
+})
+
+test('stockGrid gives one code per stock and month, A to Z', () => {
+  const plan = { year: 2027, exits: true, items: [{ t: 'FCMB', w: ['10.3', '1.1'] }, { t: 'ETI', w: ['11.3'] }] }
+  const grid = stockGrid(plan, monthBoard(plan, byTicker))
+  assert.deepEqual(grid.map((r) => r.ticker), ['ETI', 'FCMB'])
+  const codes = (t) => grid.find((r) => r.ticker === t).months.map((m) => m.code || '.').join(' ')
+  assert.equal(codes('FCMB'), 'buysell . . . . . . avoid avoid buy hold sell')
+  assert.equal(codes('ETI'), 'sell . . . . . . . . . buy hold')
+  // Selling one window (Oct-Dec) and buying another (Dec-Jan) in the same month is shown as buysell
+  const both = { year: 2027, exits: false, items: [{ t: 'FCMB', w: ['10.3', '12.2'] }] }
+  assert.equal(stockGrid(both, monthBoard(both, byTicker))[0].months[11].code, 'buysell')
 })
 
 test('trades lists planned windows first, by entry date', () => {

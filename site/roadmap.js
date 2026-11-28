@@ -94,6 +94,23 @@ export function monthBoard(plan, byTicker) {
   return board
 }
 
+// One row per planned stock (A to Z) for the stock-by-month grid. Each month gets one code:
+// buysell (buys and sells that month), buy, sell, hold, avoid (exit or avoid, not planned) or '' (nothing),
+// plus the board entries behind it.
+export function stockGrid(plan, board) {
+  return plan.items.map((i) => i.t).sort().map((ticker) => ({
+    ticker,
+    months: board.map((cells) => {
+      const entries = cells.filter((c) => c.ticker === ticker)
+      const roles = new Set(entries.map((c) => c.role))
+      const buy = roles.has('buy') || roles.has('buysell')
+      const sell = roles.has('sell') || roles.has('buysell')
+      const code = buy && sell ? 'buysell' : buy ? 'buy' : sell ? 'sell' : roles.has('hold') ? 'hold' : roles.has('avoid') ? 'avoid' : ''
+      return { code, entries }
+    }),
+  }))
+}
+
 // One row per occurrence touching the plan year, sorted by entry date: planned windows, then (if
 // plan.exits) exit-or-avoid windows. Used for the CSV and the calendar file.
 export function trades(plan, byTicker) {
