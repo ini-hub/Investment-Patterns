@@ -33,9 +33,10 @@ button, input, select { font-family: inherit; }
 .topbar .in { max-width: 1200px; margin: 0 auto; padding: 14px 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
 .brand { font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; }
-.nav a, .nav span { padding: 8px 12px; border-radius: 8px; font-size: 14px; text-decoration: none; color: var(--muted); font-weight: 500; }
+.nav > a, .nav > span { padding: 8px 12px; border-radius: 8px; font-size: 14px; text-decoration: none; color: var(--muted); font-weight: 500; }
+#plan-count { font-weight: 500; }
 .nav a[aria-current="page"] { background: var(--blue-soft); color: var(--blue); font-weight: 600; }
-.nav span { color: var(--faint); }
+.nav > span { color: var(--faint); }
 .status { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .dot { width: 8px; height: 8px; border-radius: 4px; background: #16a34a; }
 
@@ -152,6 +153,36 @@ select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong)
 .cmp td b, .cmp td span { display: block; }
 .cmp td span { font-variant-numeric: tabular-nums; }
 .loading { color: var(--muted); font-size: 14px; padding: 24px 0; }
+.scard .body { display: flex; flex-direction: column; gap: 10px; color: inherit; text-decoration: none; }
+.data .pill { min-height: 30px; padding: 4px 10px; white-space: nowrap; }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+
+/* ------------------------------------------------------------------ roadmap */
+.months { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.mbox { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 110px; }
+.mbox.now { border: 2px solid var(--ink); }
+.mbox.past { opacity: 0.6; }
+.mbox h3 { margin: 0; font-family: var(--display); font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.mbox ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.r { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 2px 10px; font-size: 13px; line-height: 1.4; }
+.r .tag { grid-row: span 2; align-self: start; padding: 3px 4px; border-radius: 6px; text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.r .who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.r .who a { font-weight: 700; color: var(--ink); text-decoration: none; }
+.r .who a:hover { color: var(--blue); }
+.r .who .badge { padding: 1px 6px; font-size: 11px; }
+.r .d { color: var(--muted); font-size: 12px; }
+.r.buy .tag, .r.buysell .tag { background: var(--blue); color: #fff; }
+.r.hold .tag { background: var(--blue-soft); color: var(--blue-dark); }
+.r.sell .tag { background: #dcfce7; color: #14532d; }
+.r.avoid .tag { background: #ffedd5; color: #9a3412; }
+.frz { font-size: 11px; font-weight: 600; color: #9a3412; }
+.plist { display: flex; flex-direction: column; gap: 14px; }
+.pstock { border-top: 1px solid #eef0f3; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.pstock .tk { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.pill.win span { color: var(--muted); font-weight: 400; }
+.pill.win[aria-pressed="true"] span { color: var(--blue-dark); }
+.linkbox { display: block; width: 100%; max-width: 640px; margin-top: 6px; min-height: 36px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: 8px; font-size: 13px; }
+.steps { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; }
 
 @media (max-width: 640px) {
   .topbar .in, main, footer { padding-left: 16px; padding-right: 16px; }
@@ -163,4 +194,8 @@ select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong)
   .topbar, .no-print, .tabs, footer .no-print { display: none !important; }
   body, main { background: #fff; }
   .card, .pcard, .tile, .scroll { break-inside: avoid; }
+  .months { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .mbox { padding: 8px 10px; min-height: 0; break-inside: avoid; }
+  .mbox.past { opacity: 1; }
+  .pill.win[aria-pressed="false"] { display: none; }
 }
