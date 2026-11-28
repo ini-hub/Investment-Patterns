@@ -50,6 +50,8 @@ Company names and sectors come from [src/scanner/data/securities.csv](src/scanne
 
 A static version of the app for visitors lives in [site/](site/): plain HTML, CSS and JavaScript, no server. At build time `python -m scanner.publish` scans every stock with the default settings and writes JSON to `site/data/`; the page reads those files. It publishes returns and statistics only, never closing prices (see docs/SCOPE.md 7.3). Visitors can pick stocks, open single-stock results and compare any number of stocks with filters; they cannot upload files or change settings. The Streamlit app stays the full research tool.
 
+**Year roadmap** (`#/roadmap`): visitors add stocks from Compare (one at a time, or every stock shown after filtering) or from a stock's report. Each stock starts with its Tier 1 and Tier 2 windows, leaving out any that overlap a stronger one; Watch and Emerging windows can be switched on per stock. A stock-by-month grid shows each stock's plan at a glance (B buy, H hold, S sell, × exit or avoid; exit-or-avoid is hidden in months where that stock is planned, and can be switched off); select a cell for its windows and dates. Below it, twelve month boxes list only the buys and sells, with dates, years up and median return. The plan is kept in the visitor's browser (`localStorage`) for a chosen year and exports as CSV, a calendar file (`.ics`, all-day Buy and Sell events) or print/PDF. A share link (`#/roadmap/2027/FCMB:10.3,ETI:12.2`, i.e. ticker and `start_month.length` keys) opens the same plan read-only, with an option to save it. The date logic lives in [site/roadmap.js](site/roadmap.js) and is tested with `node --test 'tests/site/*.test.mjs'`.
+
 Build and preview locally:
 
 ```bash

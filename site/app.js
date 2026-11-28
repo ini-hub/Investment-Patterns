@@ -1,5 +1,8 @@
 // Investment Patterns public site. Reads the JSON written by `python -m scanner.publish`.
-// Screens (hash routes): #/ scan · #/stock/TICKER results · #/compare/all or #/compare/A,B,C compare.
+// Screens (hash routes): #/ scan · #/stock/TICKER results · #/compare/all or #/compare/A,B,C compare ·
+// #/roadmap (this browser's year roadmap) or #/roadmap/YEAR/TICKER:key,... (a shared one).
+
+import { PICKABLE, calendarFile, decodePlan, defaultWindows, encodePlan, lastBday, monthBoard, shortDay, stockGrid, trades, wkey } from './roadmap.js'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -31,7 +34,7 @@ const S = {
   index: null, byTicker: new Map(), stocks: new Map(),
   sel: loadJSON('ip.sel', ['FCMB']), mode: loadJSON('ip.mode', 'Compare'), query: '', active: 0,
   tab: 'patterns', heatAll: false, yearWindow: null, filters: new Set(), sort: 'Most Tier 1', cmpAll: false,
-  ranked: 'Rising', lastCompare: null,
+  ranked: 'Rising', lastCompare: null, plan: null, flash: '',
 }
 const today = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()) })()
 
@@ -67,7 +70,6 @@ async function stock(t) {
 function months(start, len) { return Array.from({ length: len }, (_, i) => ((start - 1 + i) % 12) + 1) }
 
 // Next or current occurrence of a window: entry = close of the last business day before it starts.
-function lastBday(y, m0) { const d = new Date(y, m0 + 1, 0); while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1); return d }
 function nextDates(start, len, asOf = today) {
   for (const y of [asOf.getFullYear() - 1, asOf.getFullYear(), asOf.getFullYear() + 1]) {
     const entry = lastBday(y, start - 2)
@@ -103,14 +105,59 @@ function setNav(which) {
     if (a.dataset.nav === which) a.setAttribute('aria-current', 'page')
     else a.removeAttribute('aria-current')
   })
+  const n = S.plan?.items.length || 0
+  document.getElementById('plan-count').textContent = n ? ` (${n})` : ''
+}
+function takeFlash() { const f = S.flash; S.flash = ''; return f }
+
+// ------------------------------------------------------------------ roadmap plan (this browser)
+function defaultYear() { return today.getMonth() >= 9 ? today.getFullYear() + 1 : today.getFullYear() }
+function loadPlan() {
+  const p = loadJSON('ip.plan', null)
+  const items = Array.isArray(p?.items) ? p.items.filter((i) => i && typeof i.t === 'string' && Array.isArray(i.w)) : []
+  return { year: Number.isInteger(p?.year) ? p.year : defaultYear(), exits: p?.exits !== false, items }
+}
+function savePlan() { saveJSON('ip.plan', S.plan); setNav(document.querySelector('[data-nav][aria-current]')?.dataset.nav || '') }
+function planItem(t) { return S.plan.items.find((i) => i.t === t) }
+// Add stocks with their default (Tier 1 / Tier 2, non-overlapping) windows. In bulk, stocks with none are skipped.
+function addToPlan(tickers, bulk = false) {
+  let added = 0
+  const skipped = []
+  for (const t of tickers) {
+    const s = S.byTicker.get(t)
+    if (!s || planItem(t)) continue
+    const w = defaultWindows(s.classified)
+    if (bulk && !w.length) { skipped.push(t); continue }
+    S.plan.items.push({ t, w })
+    added++
+  }
+  savePlan()
+  return { added, skipped }
+}
+function removeFromPlan(t) { S.plan.items = S.plan.items.filter((i) => i.t !== t); savePlan() }
+function toggleWindow(t, key) {
+  let item = planItem(t)
+  if (!item) { item = { t, w: [] }; S.plan.items.push(item) }
+  item.w = item.w.includes(key) ? item.w.filter((k) => k !== key) : [...item.w, key]
+  savePlan()
+}
+function planButton(t) {
+  const on = Boolean(planItem(t))
+  return `<button class="pill" data-act="plan" data-v="${esc(t)}" aria-pressed="${on}" title="${on ? 'Remove from' : 'Add to'} your year roadmap">${on ? '✓ In roadmap' : '+ Roadmap'}</button>`
+}
+function addedMessage({ added, skipped }) {
+  const parts = [added ? `Added ${added} stock${added === 1 ? '' : 's'} to your <a href="#/roadmap">year roadmap</a>.` : 'Those stocks are already in your <a href="#/roadmap">year roadmap</a>.']
+  if (skipped.length) parts.push(`${skipped.length} with no Tier 1 or Tier 2 window ${skipped.length === 1 ? 'was' : 'were'} skipped${skipped.length <= 8 ? `: ${skipped.map(esc).join(', ')}` : ''}.`)
+  return callout('info', parts.join(' '))
 }
 
 // ------------------------------------------------------------------ routing
 async function render() {
-  const [, view, arg] = (location.hash.replace(/^#/, '') || '/').split('/')
+  const [, view, arg, arg2] = (location.hash.replace(/^#/, '') || '/').split('/')
   try {
     if (view === 'stock' && arg) { setNav(''); await renderStock(decodeURIComponent(arg).toUpperCase()) }
     else if (view === 'compare') { setNav('compare'); await renderCompare(decodeURIComponent(arg || 'all')) }
+    else if (view === 'roadmap') { setNav('roadmap'); renderRoadmap(arg, arg2) }
     else { setNav('scan'); renderScan() }
   } catch (err) {
     app.innerHTML = `<h1>Something went wrong</h1><p class="muted">${esc(err.message)}</p><p><a href="#/">Back to Scan</a></p>`
@@ -124,6 +171,8 @@ async function boot() {
   document.getElementById('status').innerHTML = `<span class="dot" aria-hidden="true"></span><span>NGX · ${S.index.stocks.length} stocks · to ${day(snap)}</span>`
   document.getElementById('source').textContent = `Data: ${S.index.source}. Last price ${day(snap)}. Benchmark: ${S.index.benchmark}.`
   S.sel = S.sel.filter((t) => S.byTicker.has(t))
+  S.plan = loadPlan()
+  S.plan.items = S.plan.items.filter((i) => S.byTicker.has(i.t))
   window.addEventListener('hashchange', () => { render(); app.focus({ preventScroll: true }); window.scrollTo(0, 0) })
   await render()
 }
@@ -299,8 +348,8 @@ function dataTable(cols, rows, { link } = {}) {
 }
 function wireRowLinks(root = app) {
   root.querySelectorAll('tr[data-href]').forEach((tr) => {
-    tr.addEventListener('click', () => { location.hash = tr.dataset.href })
-    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') location.hash = tr.dataset.href })
+    tr.addEventListener('click', (e) => { if (!e.target.closest('button, a')) location.hash = tr.dataset.href })
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === tr) location.hash = tr.dataset.href })
   })
 }
 
@@ -362,11 +411,13 @@ async function renderStock(t) {
     <section class="row spread" style="align-items:flex-end">
       <h1>${esc(t)} ${doc.name ? `<small>${esc(doc.name)}</small>` : ''}</h1>
       <div class="row no-print" style="gap:8px">
+        ${planButton(t).replace('class="pill"', 'class="btn"')}
         <button class="btn" data-act="addcmp">+ Add to comparison</button>
         <button class="btn" data-act="csv">CSV</button>
         <button class="btn primary" data-act="print">Print or save PDF</button>
       </div>
     </section>
+    ${takeFlash()}
     <p class="muted">Daily closes ${day(isoDay(doc.first_date))} to ${day(isoDay(doc.last_date))} · ${esc(doc.completeness)} Benchmark: ${esc(S.index.benchmark)}.</p>
     ${warns.join('')}
     <div class="tiles">
@@ -385,6 +436,15 @@ async function renderStock(t) {
     if (act === 'print') return window.print()
     if (act === 'csv') return download(`patterns_${t}.csv`, csv(W, Object.keys(W[0])))
     if (act === 'addcmp') { setSel([...S.sel.filter((x) => x !== t), t], 'Compare'); location.hash = '#/'; return }
+    if (act === 'plan') {
+      if (planItem(t)) removeFromPlan(t)
+      else {
+        addToPlan([t])
+        S.flash = callout('info', planItem(t).w.length
+          ? `Added ${esc(t)} to your <a href="#/roadmap">year roadmap</a> with its Tier 1 and Tier 2 windows. You can change which windows are used there.`
+          : `Added ${esc(t)} to your <a href="#/roadmap">year roadmap</a>. It has no Tier 1 or Tier 2 window, so pick its windows there.`)
+      }
+    }
     renderStock(t)
   }))
   document.getElementById('yw')?.addEventListener('change', (e) => { S.yearWindow = e.target.value; renderStock(t) })
@@ -461,8 +521,9 @@ async function renderCompare(arg) {
         <h1>Comparing ${all ? `all ${scanned.length}` : scanned.length} stocks</h1>
         <div class="row" style="gap:8px">${scanned.length <= CARD_LIMIT ? scanned.map((s) => `<a class="btn" href="#/stock/${esc(s.ticker)}" style="min-height:36px">${esc(s.ticker)}</a>`).join('') : ''}<a href="#/" style="font-size:13px">Edit list</a></div>
       </div>
-      <div class="row no-print" style="gap:8px"><button class="btn" data-act="csv">CSV</button><button class="btn primary" data-act="print">Print or save PDF</button></div>
+      <div class="row no-print" style="gap:8px">${view.length ? `<button class="btn" data-act="planall" title="Adds each stock's Tier 1 and Tier 2 windows">+ Add ${view.length === scanned.length ? 'all' : 'the'} ${view.length} shown to roadmap</button>` : ''}<button class="btn" data-act="csv">CSV</button><button class="btn primary" data-act="print">Print or save PDF</button></div>
     </section>
+    ${takeFlash()}
     ${missing.map((t) => callout('warn', `No price data found for ${esc(t)}`)).join('')}
     <section class="card no-print" style="flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px">
       <button class="pill" data-act="filter" data-v="frozen" aria-pressed="${S.filters.has('frozen')}">Exclude frozen price</button>
@@ -476,12 +537,15 @@ async function renderCompare(arg) {
   if (!view.length) body = '<p class="muted">No stocks match the filters. Turn a filter off to see them.</p>'
   else if (few) {
     body = `<section class="scards">${view.map((s) => `
-      <a class="scard" href="#/stock/${esc(s.ticker)}">
-        <span class="row spread" style="gap:8px"><span class="tk">${esc(s.ticker)}</span><span class="muted">${s.years} yrs</span></span>
-        <span class="pills">${[['Tier 1', 'T1'], ['Tier 2', 'T2'], ['Watch', 'W'], ['Negative', 'Exit']].map(([k, sh]) => badge(k, `${sh} ${s.counts[k]}`)).join('')}</span>
-        <span class="muted">Best: <strong style="color:#14171F">${s.best ? `${esc(s.best.window)} ${ratio(s.best.up, s.best.n)}, median ${pct(s.best.median)}` : 'no rising pattern'}</strong></span>
-        ${s.frozen ? '<span class="muted" style="color:#9A3412">Frozen price: unreliable</span>' : ''}
-      </a>`).join('')}</section>`
+      <article class="scard">
+        <a class="body" href="#/stock/${esc(s.ticker)}">
+          <span class="row spread" style="gap:8px"><span class="tk">${esc(s.ticker)}</span><span class="muted">${s.years} yrs</span></span>
+          <span class="pills">${[['Tier 1', 'T1'], ['Tier 2', 'T2'], ['Watch', 'W'], ['Negative', 'Exit']].map(([k, sh]) => badge(k, `${sh} ${s.counts[k]}`)).join('')}</span>
+          <span class="muted">Best: <strong style="color:#14171F">${s.best ? `${esc(s.best.window)} ${ratio(s.best.up, s.best.n)}, median ${pct(s.best.median)}` : 'no rising pattern'}</strong></span>
+          ${s.frozen ? '<span class="muted" style="color:#9A3412">Frozen price: unreliable</span>' : ''}
+        </a>
+        <span class="no-print">${planButton(s.ticker)}</span>
+      </article>`).join('')}</section>`
   } else {
     body = `<section class="card"><h2>Stocks</h2><p class="muted">Select a row to open that stock's report.</p>${dataTable([
       { label: 'Stock', html: (s) => `<strong>${esc(s.ticker)}</strong>` }, { label: 'Years', num: 1, get: (s) => s.years },
@@ -490,7 +554,7 @@ async function renderCompare(arg) {
       { label: 'Exit', num: 1, get: (s) => s.counts.Negative },
       { label: 'Best window', get: (s) => (s.best ? `${s.best.window} (${s.best.class})` : '') }, { label: 'Years up', get: (s) => (s.best ? ratio(s.best.up, s.best.n) : '') },
       { label: 'Best median', num: 1, get: (s) => (s.best ? pct(s.best.median) : '') }, { label: 'Chance check', num: 1, get: (s) => pct(s.chance, 0, false) },
-      { label: 'Frozen', get: (s) => (s.frozen ? 'Frozen' : '') }], view, { link: (s) => `#/stock/${s.ticker}` })}</section>`
+      { label: 'Frozen', get: (s) => (s.frozen ? 'Frozen' : '') }, { label: 'Roadmap', html: (s) => planButton(s.ticker) }], view, { link: (s) => `#/stock/${s.ticker}` })}</section>`
   }
 
   let windows = ''
@@ -526,7 +590,11 @@ async function renderCompare(arg) {
         { label: 'Years up', get: (w) => ratio(w.up, w.n) }, { label: 'Streak', num: 1, get: (w) => w.streak }, { label: 'Median', num: 1, get: (w) => pct(w.median) },
         { label: 'Worst year', num: 1, get: (w) => pct(w.worst) }, { label: 'Beat market', get: (w) => ratio(w.beat_market, w.market_n) },
         { label: 'Median dip', num: 1, get: (w) => pct(w.median_dip) }, { label: 'Next entry close', get: (w) => (w.length < 12 ? day(nextDates(w.start_month, w.length).entry) : '') },
-        { label: 'Flags', get: (w) => w.flags || '' }], rows, { link: (w) => `#/stock/${w.ticker}` }) : '<p class="muted">None among the stocks shown.</p>'}
+        { label: 'Flags', get: (w) => w.flags || '' },
+        ...(classes[0] === 'Negative' ? [] : [{ label: 'Roadmap', html: (w) => {
+          const on = Boolean(planItem(w.ticker)?.w.includes(wkey(w)))
+          return `<button class="pill" data-act="planw" data-v="${esc(w.ticker)}|${wkey(w)}" aria-pressed="${on}" aria-label="${on ? 'Remove' : 'Add'} ${esc(w.ticker)} ${esc(w.window)} ${on ? 'from' : 'to'} roadmap">${on ? '✓ Added' : '+ Add'}</button>`
+        } }])], rows, { link: (w) => `#/stock/${w.ticker}` }) : '<p class="muted">None among the stocks shown.</p>'}
       <p class="muted">${rows.length} windows, strongest first. Select a row to open that stock's report.</p></section>`
   }
 
@@ -544,6 +612,9 @@ async function renderCompare(arg) {
     if (act === 'filter') S.filters.has(v) ? S.filters.delete(v) : S.filters.add(v)
     if (act === 'cmpall') S.cmpAll = v === '1'
     if (act === 'ranked') S.ranked = v
+    if (act === 'plan') planItem(v) ? removeFromPlan(v) : addToPlan([v])
+    if (act === 'planw') { const [t, key] = v.split('|'); toggleWindow(t, key) }
+    if (act === 'planall') S.flash = addedMessage(addToPlan(view.map((s) => s.ticker), true))
     if (act === 'print') return window.print()
     if (act === 'csv') {
       const rows = scanned.map((s) => ({ ticker: s.ticker, name: s.name, sector: s.sector, years: s.years, frozen: s.frozen, tier1: s.counts['Tier 1'], tier2: s.counts['Tier 2'],
@@ -553,6 +624,199 @@ async function renderCompare(arg) {
     renderCompare(arg)
   }))
   document.getElementById('sort').addEventListener('change', (e) => { S.sort = e.target.value; renderCompare(arg) })
+}
+
+// ------------------------------------------------------------------ screen 4: year roadmap
+const ROLE = { buy: 'Buy', buysell: 'Buy + sell', hold: 'Hold', sell: 'Sell', avoid: 'Avoid' }
+const SHORT = { 'Tier 1': 'T1', 'Tier 2': 'T2', Watch: 'W', Emerging: 'E', Negative: 'Exit' }
+const CLASS_RANK = { 'Tier 1': 0, 'Tier 2': 1, Watch: 2, Emerging: 3 }
+const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+function avoidText(ws) {
+  const falls = ws.map((w) => w.n - w.up)
+  const sameN = ws.every((w) => w.n === ws[0].n)
+  const lo = Math.min(...falls), hi = Math.max(...falls)
+  const fell = sameN ? `fell in ${lo === hi ? lo : `${lo} to ${hi}`} of ${ws[0].n} years` : 'fell in most years'
+  return `${ws.map((w) => w.window).join(', ')} · ${fell}`
+}
+const LETTER = { buy: 'B', sell: 'S', hold: 'H', buysell: 'B+S', avoid: '×', '': '' }
+const ACTIONS = ['buy', 'buysell', 'sell']
+function cellText(t, m, entries) {
+  if (!entries.length) return `${t}, ${MONTHS_LONG[m]}: nothing planned.`
+  return `${t}, ${MONTHS_LONG[m]}: ` + entries.map((c) => {
+    if (c.role === 'avoid') return `exit or avoid (${avoidText(c.ws)})`
+    const when = [c.role === 'buy' || c.role === 'buysell' ? `buy at the close of ${shortDay(c.entry)}` : '',
+      c.role === 'sell' || c.role === 'buysell' ? `sell at the close of ${shortDay(c.exit)}` : '',
+      c.role === 'hold' ? `hold until ${shortDay(c.exit)}` : ''].filter(Boolean).join(', ')
+    return `${c.w.window} ${c.w.class}: ${when}`
+  }).join('; ') + '.'
+}
+function boardRow(c) {
+  const w = c.w
+  const stats = `up ${w.up} of ${w.n} years, median ${pct(w.median)}`
+  const detail = {
+    buy: () => `${w.window} · buy at the close of ${shortDay(c.entry)} · ${stats}`,
+    buysell: () => `${w.window} · buy at the close of ${shortDay(c.entry)}, sell ${shortDay(c.exit)} · ${stats}`,
+    hold: () => `${w.window} · hold until ${shortDay(c.exit)}`,
+    sell: () => `${w.window} · sell at the close of ${shortDay(c.exit)}`,
+    avoid: () => avoidText(c.ws),
+  }[c.role]()
+  return `<li class="r ${c.role}"><span class="tag">${ROLE[c.role]}</span><span class="who"><a href="#/stock/${esc(c.ticker)}">${esc(c.ticker)}</a>${badge(w.class, SHORT[w.class])}${c.frozen ? '<span class="frz" title="Frozen price: this stock\'s patterns are unreliable">frozen</span>' : ''}</span><span class="d">${esc(detail)}</span></li>`
+}
+
+function renderRoadmap(yearArg, itemsArg) {
+  let shared = yearArg ? decodePlan(yearArg, itemsArg) : null
+  if (shared) {
+    shared.items = shared.items.filter((i) => S.byTicker.has(i.t))
+    if (encodePlan(shared) === encodePlan(S.plan)) { history.replaceState(null, '', '#/roadmap'); shared = null } // it is this browser's own plan
+  }
+  const plan = shared ? { ...shared, exits: S.plan.exits } : S.plan
+  const editable = !shared
+  const rerender = () => (shared ? renderRoadmap(yearArg, itemsArg) : renderRoadmap())
+  const n = plan.items.length
+  const board = monthBoard(plan, S.byTicker)
+  const thisYear = today.getFullYear()
+  const years = [...new Set([thisYear, thisYear + 1, thisYear + 2, plan.year])].sort()
+  const nowM = plan.year === thisYear ? today.getMonth() : -1
+  const pastBefore = plan.year < thisYear ? 12 : plan.year === thisYear ? today.getMonth() : 0
+  const nWindows = plan.items.reduce((a, i) => a + i.w.length, 0)
+
+  const head = `
+    <section class="row spread" style="align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h1>Year roadmap <small>${plan.year}</small></h1>
+        <p class="lede">When to buy, hold and sell the stocks you picked, from each stock's strongest seasonal windows. Add stocks from <a href="#/compare/all">Compare</a> or from a stock's report.</p>
+      </div>
+      <div class="row no-print" style="gap:8px">
+        <label class="muted" for="plan-year">Year</label>
+        <select id="plan-year">${years.map((y) => `<option ${y === plan.year ? 'selected' : ''}>${y}</option>`).join('')}</select>
+        ${n ? `<button class="btn" data-act="share">Copy share link</button><button class="btn" data-act="csv">CSV</button>
+        <button class="btn" data-act="ics" title="Buy and sell dates as all-day events for Google, Apple or Outlook Calendar">Calendar (.ics)</button>
+        <button class="btn primary" data-act="print">Print or save PDF</button>` : ''}
+      </div>
+    </section>
+    ${takeFlash()}
+    ${shared ? callout('info', `<strong>This is a shared roadmap</strong> (${n} stock${n === 1 ? '' : 's'}). It is not saved in this browser.
+      <span class="row no-print" style="gap:8px;margin-top:8px"><button class="btn" data-act="adopt">Save as my roadmap</button><a href="#/roadmap">Open my roadmap</a></span>`) : ''}`
+
+  if (!n) {
+    app.innerHTML = `${head}
+      <section class="card"><h2>${shared ? 'This shared roadmap has no stocks' : 'Your roadmap is empty'}</h2>
+        <ol class="steps"><li>Open <strong>Compare</strong> and narrow the list with the filters and sorting.</li>
+          <li>Choose <strong>+ Roadmap</strong> on the stocks you want, or <strong>+ Add the stocks shown to roadmap</strong>. A stock's report has the same button.</li>
+          <li>Come back here to see the months laid out, switch windows on or off, and export the plan.</li></ol>
+        <div class="row"><a class="btn primary" href="#/compare/all">Compare all stocks ${ICON_ARROW}</a><a class="btn" href="#/compare/${RESEARCH_TIER1.join(',')}">Compare the research Tier 1 stocks</a></div>
+      </section>`
+    wireRoadmap()
+    return
+  }
+
+  const grid = stockGrid(plan, board)
+  const legend = [['buy', 'Buy'], ['hold', 'Hold'], ['sell', 'Sell'], ['buysell', 'Buy and sell'], ...(plan.exits ? [['avoid', 'Exit or avoid']] : [])]
+  const gridHtml = `<section class="card">
+    <div class="row spread"><h2>Stocks by month</h2>
+      <div class="legend">${legend.map(([k, l]) => `<span><i class="g ${k}">${LETTER[k]}</i>${l}</span>`).join('')}</div></div>
+    <div class="scroll-x"><table class="rgrid" aria-label="Plan for each stock, month by month">
+      <thead><tr><th scope="col">Stock</th>${MONTHS.map((mm, i) => `<th scope="col"${i === nowM ? ' class="now"' : ''}>${mm}</th>`).join('')}</tr></thead>
+      <tbody>${grid.map((r) => `<tr><th scope="row"><a href="#/stock/${esc(r.ticker)}">${esc(r.ticker)}</a>${S.byTicker.get(r.ticker)?.frozen ? ' <span class="frz" title="Frozen price: patterns unreliable">frozen</span>' : ''}</th>
+        ${r.months.map((c, m) => {
+          const text = cellText(r.ticker, m, c.entries)
+          return `<td class="g ${c.code}${m === nowM ? ' now' : ''}${m < pastBefore ? ' past' : ''}" tabindex="0" data-detail="${esc(text)}" title="${esc(text)}"><span aria-hidden="true">${LETTER[c.code]}</span><span class="sr-only">${esc(text)}</span></td>`
+        }).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+    <p class="muted" id="grid-detail" aria-live="polite">Select a cell for its windows and dates. Buy is at the close of the month before; sell at the close of the month shown.</p>
+  </section>`
+
+  const monthsHtml = `<h2 style="margin-top:8px">Buys and sells by month</h2><section class="months">${board.map((cells, m) => {
+    const acts = cells.filter((c) => ACTIONS.includes(c.role))
+    return `
+    <article class="mbox${m === nowM ? ' now' : ''}${m < pastBefore ? ' past' : ''}">
+      <h3>${MONTHS_LONG[m]}${m === nowM ? ' <span class="badge" style="background:#14171F;color:#fff">This month</span>' : ''}</h3>
+      ${acts.length ? `<ul>${acts.map(boardRow).join('')}</ul>` : '<p class="muted">No buys or sells.</p>'}
+    </article>`
+  }).join('')}</section>`
+
+  const stocks = plan.items.map((i) => {
+    const s = S.byTicker.get(i.t)
+    const pick = s.classified.filter((w) => PICKABLE.includes(w.class) && w.length < 12)
+      .sort((a, b) => CLASS_RANK[a.class] - CLASS_RANK[b.class] || a.start_month - b.start_month || a.length - b.length)
+    const exits = s.classified.filter((w) => w.class === 'Negative' && w.length < 12)
+    const pill = (w) => {
+      const on = i.w.includes(wkey(w))
+      const inner = `<b>${SHORT[w.class]}</b> ${esc(w.window)} <span>${ratio(w.up, w.n)} · ${pct(w.median)}</span>`
+      return editable
+        ? `<button class="pill win" data-act="win" data-v="${esc(i.t)}|${wkey(w)}" aria-pressed="${on}" aria-label="${esc(`${w.window} ${w.class}, up ${w.up} of ${w.n} years`)}">${inner}</button>`
+        : on ? `<span class="pill win" aria-pressed="true">${inner}</span>` : ''
+    }
+    return `<div class="pstock">
+      <div class="row spread" style="gap:8px">
+        <span><a class="tk" href="#/stock/${esc(i.t)}">${esc(i.t)}</a> <span class="muted">${esc(s.name || s.sector || '')}</span>
+          ${s.frozen ? '<span class="frz">Frozen price: unreliable</span>' : ''}</span>
+        ${editable ? `<button class="btn small no-print" data-act="remove" data-v="${esc(i.t)}" aria-label="Remove ${esc(i.t)} from roadmap">Remove</button>` : ''}
+      </div>
+      <div class="row" style="gap:6px">${pick.length ? pick.map(pill).join('') : '<span class="muted">No rising windows.</span>'}
+        ${!i.w.length ? '<span class="muted">No windows chosen, so this stock is not on the calendar.</span>' : ''}</div>
+      ${exits.length ? `<p class="muted">Exit or avoid: ${exits.map((w) => `${esc(w.window)} (fell in ${w.n - w.up} of ${w.n} years)`).join(', ')}</p>` : ''}
+    </div>`
+  }).join('')
+
+  app.innerHTML = `${head}
+    ${callout('warn', `<strong>A plan from past patterns, not a forecast.</strong> Windows come from closing prices up to ${day(isoDay(S.index.snapshot_date))}; no ${plan.year} prices are in the data. <em>Buy</em> means at the close of the last business day before the window starts, <em>sell</em> at the close of its last month. NGX holidays are not modelled. Not investment advice.`)}
+    <section class="row no-print" style="gap:12px">
+      <button class="pill" data-act="exits" aria-pressed="${plan.exits}">Show exit or avoid months</button>
+      <span class="muted">${n} stock${n === 1 ? '' : 's'} · ${nWindows} window${nWindows === 1 ? '' : 's'} on the calendar</span>
+    </section>
+    ${nWindows ? '' : callout('info', 'No windows are switched on yet. Pick some under <strong>Stocks in this roadmap</strong> below.')}
+    ${gridHtml}
+    ${monthsHtml}
+    <section class="card">
+      <div class="row spread"><h2>Stocks in this roadmap (${n})</h2>${editable ? '<button class="btn small no-print" data-act="clear">Clear roadmap</button>' : ''}</div>
+      ${editable ? '<p class="muted no-print">Switch windows on or off. A stock starts with its Tier 1 and Tier 2 windows, leaving out any that overlap a stronger one. T1 Tier 1, T2 Tier 2, W Watch, E Emerging; each shows years up and median return.</p>' : ''}
+      <div class="plist">${stocks}</div>
+    </section>`
+  wireRoadmap()
+
+  function wireRoadmap() {
+    document.getElementById('plan-year').addEventListener('change', (e) => {
+      const y = Number(e.target.value)
+      if (editable) { S.plan.year = y; savePlan(); rerender() } else location.hash = `#/roadmap/${encodePlan({ ...plan, year: y })}`
+    })
+    app.querySelectorAll('td[data-detail]').forEach((td) => {
+      const show = () => { document.getElementById('grid-detail').textContent = td.dataset.detail }
+      td.addEventListener('click', show)
+      td.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show() } })
+    })
+    app.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', async () => {
+      const { act, v } = el.dataset
+      if (act === 'print') return window.print()
+      if (act === 'ics') return download(`roadmap_${plan.year}.ics`, calendarFile(plan, S.byTicker), 'text/calendar')
+      if (act === 'csv') {
+        const rows = trades(plan, S.byTicker).map((r) => ({ type: r.planned ? 'Planned' : 'Exit or avoid', ticker: r.ticker, name: r.name, window: r.w.window,
+          class: r.w.class, buy_at_close_of: isoDate(r.entry), sell_at_close_of: isoDate(r.exit), years_up: r.w.up, years: r.w.n, median_return: r.w.median, frozen_price: r.frozen }))
+        return download(`roadmap_${plan.year}.csv`, csv(rows, ['type', 'ticker', 'name', 'window', 'class', 'buy_at_close_of', 'sell_at_close_of', 'years_up', 'years', 'median_return', 'frozen_price']))
+      }
+      if (act === 'share') {
+        const url = `${location.origin}${location.pathname}#/roadmap/${encodePlan(plan)}`
+        let copied = false
+        try { await navigator.clipboard.writeText(url); copied = true } catch { /* not allowed: show the link to copy by hand */ }
+        S.flash = callout('info', `${copied ? '<strong>Link copied.</strong>' : '<strong>Copy this link:</strong>'} <input class="linkbox" readonly value="${esc(url)}" aria-label="Share link"> It holds only the year, tickers and windows.`)
+      }
+      if (act === 'exits') { S.plan.exits = !S.plan.exits; savePlan() }
+      if (act === 'win') { const [t, key] = v.split('|'); toggleWindow(t, key) }
+      if (act === 'remove') removeFromPlan(v)
+      if (act === 'clear' && window.confirm(`Remove all ${n} stocks from your roadmap?`)) { S.plan.items = []; savePlan() }
+      if (act === 'adopt') {
+        if (S.plan.items.length && !window.confirm(`Replace your roadmap (${S.plan.items.length} stocks) with this one?`)) return
+        S.plan = { year: plan.year, exits: S.plan.exits, items: plan.items.map((i) => ({ t: i.t, w: [...i.w] })) }
+        savePlan()
+        S.flash = callout('info', 'Saved as your roadmap in this browser.')
+        location.hash = '#/roadmap'
+        return
+      }
+      rerender()
+      if (act === 'share') app.querySelector('.linkbox')?.select()
+    }))
+  }
 }
 
 boot().catch((err) => {

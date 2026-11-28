@@ -69,8 +69,13 @@ jobs:
           path: data/nairadb
           key: nairadb-4de805bb7e88f82cc54cdb011e6b019af0ae539f
 
-      - name: Check site script
-        run: node --check site/app.js
+      - name: Check site scripts
+        run: |
+          node --check site/app.js
+          node --check site/roadmap.js
+
+      - name: Site unit tests (roadmap)
+        run: node --test 'tests/site/*.test.mjs'
 
       - name: Build site data
         run: bash scripts/build_site.sh
